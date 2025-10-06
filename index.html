@@ -118,6 +118,31 @@
         .submit-btn:active {
             transform: translateY(0);
         }
+
+        .new-user-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.4);
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .new-user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.6);
+            background: #5a6268;
+        }
+        
+        .new-user-btn:active {
+            transform: translateY(0);
+        }
         
         .wheel-container {
             position: relative;
@@ -644,6 +669,9 @@
                     </div>
                     
                     <button type="submit" class="submit-btn">Submit & Spin the Wheel</button>
+                    <button type="button" class="new-user-btn" onclick="clearUserData()">
+                        ↻ New User / Clear Data
+                    </button>
                 </form>
             </div>
 
@@ -738,6 +766,15 @@
     <script>
         // Default admin password (you can change this)
         const ADMIN_PASSWORD = "admin123";
+        
+        // Clear user data function
+        window.clearUserData = function() {
+            if (confirm('Are you sure you want to clear all user data and start over?')) {
+                localStorage.removeItem('wheelUser');
+                localStorage.removeItem('wheelSpinHistory');
+                location.reload();
+            }
+        };
         
         document.addEventListener('DOMContentLoaded', function() {
             const wheel = document.getElementById('wheel');
