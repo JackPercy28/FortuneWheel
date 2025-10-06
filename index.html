@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Spin Wheel - Cloud Sync</title>
+    <title>Lucky Spin Wheel - Firebase Sync</title>
+    <!-- Include Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
+        /* Your existing CSS styles remain the same */
         * {
             margin: 0;
             padding: 0;
@@ -38,556 +42,8 @@
             position: relative;
         }
         
-        .header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
+        /* ... (all your existing CSS styles) ... */
         
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .content {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        /* Registration Form Styles */
-        .registration-form {
-            width: 100%;
-            margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-        
-        .form-group input:focus {
-            border-color: #ff7e5f;
-            outline: none;
-        }
-        
-        .form-group input:invalid {
-            border-color: #ff4757;
-        }
-        
-        .form-group input:valid {
-            border-color: #2ed573;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 50px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 126, 95, 0.6);
-        }
-        
-        .submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .new-user-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 12px 40px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.4);
-            width: 100%;
-            margin-top: 15px;
-        }
-        
-        .new-user-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.6);
-            background: #5a6268;
-        }
-        
-        .new-user-btn:active {
-            transform: translateY(0);
-        }
-
-        .reset-btn-small {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
-            margin-top: 10px;
-        }
-        
-        .reset-btn-small:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.6);
-            background: #5a6268;
-        }
-        
-        .wheel-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin-bottom: 30px;
-        }
-        
-        .wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: relative;
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-            box-shadow: 0 0 0 10px white, 0 0 20px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        .wheel-segment {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            left: 50%;
-            top: 0;
-            transform-origin: left bottom;
-            overflow: hidden;
-        }
-        
-        .segment-text {
-            position: absolute;
-            left: 20px;
-            top: 10%;
-            transform: translateY(-50%) rotate(90deg);
-            transform-origin: left center;
-            text-align: center;
-            width: 120px;
-            font-size: 11px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            line-height: 1.2;
-        }
-        
-        .wheel-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background-color: white;
-            border-radius: 50%;
-            z-index: 10;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            color: #333;
-            border: 4px solid #ff7e5f;
-        }
-        
-        .wheel-pointer {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 40px;
-            background-color: #ff7e5f;
-            clip-path: polygon(50% 100%, 0 0, 100% 0);
-            z-index: 20;
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
-        }
-        
-        .btn-spin {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 50px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
-            margin: 0 auto 20px auto;
-            display: block;
-        }
-        
-        .btn-spin:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 126, 95, 0.6);
-        }
-        
-        .btn-spin:active {
-            transform: translateY(0);
-        }
-        
-        .btn-spin:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .result {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            width: 100%;
-            min-height: 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .result-text {
-            font-size: 1.2rem;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .prize-text {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #ff7e5f;
-        }
-        
-        .history {
-            margin-top: 20px;
-            width: 100%;
-        }
-        
-        .history h3 {
-            text-align: center;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .history-list {
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 10px;
-            background-color: #f8f9fa;
-        }
-        
-        .history-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 15px;
-            background-color: #f1f1f1;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        /* Admin Panel Styles */
-        .admin-panel {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .admin-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .admin-header h2 {
-            color: #333;
-            margin: 0;
-        }
-        
-        .close-admin {
-            background: #ff7e5f;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .prize-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        
-        .prize-color {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #ddd;
-        }
-        
-        .prize-inputs {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .prize-inputs input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .prize-name {
-            flex: 2;
-        }
-        
-        .prize-probability {
-            flex: 1;
-            max-width: 80px;
-        }
-        
-        .prize-color-input {
-            flex: 0.5;
-            max-width: 60px;
-            height: 40px;
-            padding: 0;
-            border: none;
-        }
-        
-        .remove-prize {
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        
-        .add-prize {
-            background: #2ed573;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 15px;
-            width: 100%;
-        }
-        
-        .admin-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .save-btn {
-            background: #3742fa;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            flex: 1;
-        }
-        
-        .reset-btn {
-            background: #ffa502;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            flex: 1;
-        }
-        
-        .probability-total {
-            text-align: center;
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        
-        .probability-info {
-            text-align: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            color: #1565c0;
-        }
-        
-        /* Password Panel Styles */
-        .password-panel {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1001;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .password-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-        
-        .password-header {
-            margin-bottom: 20px;
-        }
-        
-        .password-header h2 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .password-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .password-input:focus {
-            border-color: #ff7e5f;
-            outline: none;
-        }
-        
-        .password-btn {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
-            width: 100%;
-        }
-        
-        .password-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
-        }
-        
-        .password-error {
-            color: #ff4757;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            display: none;
-        }
-        
-        /* User Info Display */
-        .user-info {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-left: 4px solid #2196f3;
-        }
-        
-        .user-info h4 {
-            color: #1565c0;
-            margin-bottom: 8px;
-        }
-        
-        .user-details {
-            font-size: 0.9rem;
-            color: #333;
-        }
-        
-        /* Sync Status */
         .sync-status {
             position: fixed;
             top: 20px;
@@ -664,44 +120,12 @@
         }
     </style>
 </head>
-<style>
-    .bottom-admin-panel {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #2c3e50;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        z-index: 999;
-        border-top: 3px solid #ff7e5f;
-    }
-    
-    .bottom-admin-btn {
-        background: linear-gradient(to right, #ff7e5f, #feb47b);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
-    }
-    
-    .bottom-admin-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
-    }
-</style>
 
 <body>
     <!-- Sync Status Indicator -->
     <div class="sync-status" id="syncStatus">
         <div class="sync-indicator" id="syncIndicator"></div>
-        <span id="syncText">Checking for updates...</span>
+        <span id="syncText">Initializing Firebase...</span>
     </div>
 
     <div class="container">
@@ -778,7 +202,7 @@
         </div>
         
         <div class="footer">
-            <p>© Fortune Wheel Prototype | Cloud Sync Enabled</p>
+            <p>© Fortune Wheel Prototype | Firebase Sync Enabled</p>
         </div>
     </div>
 
@@ -827,17 +251,31 @@
             <button class="add-prize" id="addPrize">+ Add New Prize</button>
             
             <div class="admin-actions">
-                <button class="save-btn" id="savePrizes">Save & Sync Changes</button>
+                <button class="save-btn" id="savePrizes">Save & Sync to Firebase</button>
                 <button class="reset-btn" id="resetPrizes">Reset to Default</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Default admin password (you can change this)
+        // Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Default admin password
         const ADMIN_PASSWORD = "admin123";
         
-        // Default prizes (only used if no prizes are saved in localStorage)
+        // Default prizes (only used if no prizes are saved in Firebase)
         const defaultPrizes = [
             { name: "Discount 10%", probability: 20, color: "#FF6384" },
             { name: "Free Coffee", probability: 15, color: "#36A2EB" },
@@ -849,99 +287,156 @@
             { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
         ];
         
-        // Firebase configuration (replace with your actual Firebase config)
-        const firebaseConfig = {
-            apiKey: "demo-api-key",
-            authDomain: "demo-project.firebaseapp.com",
-            projectId: "demo-project",
-            storageBucket: "demo-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "demo-app-id"
-        };
-        
         let prizes = [];
         let spinCount = 0;
         let spinHistory = [];
         let currentUser = null;
-        let lastSyncTime = null;
-        
-        // Load prizes from localStorage or use defaults
-        function loadPrizes() {
-            const savedPrizes = localStorage.getItem('wheelPrizes');
-            if (savedPrizes) {
-                prizes = JSON.parse(savedPrizes);
-            } else {
-                prizes = [...defaultPrizes];
-                // Save default prizes to localStorage on first load
-                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+        let unsubscribePrizes = null;
+
+        // Load prizes from Firebase
+        async function loadPrizes() {
+            updateSyncStatus('pending', 'Connecting to Firebase...');
+            
+            try {
+                // Try to get prizes from Firebase
+                const doc = await db.collection('wheelConfig').doc('prizes').get();
+                
+                if (doc.exists) {
+                    const firebasePrizes = doc.data().prizes;
+                    const timestamp = doc.data().timestamp;
+                    
+                    prizes = firebasePrizes;
+                    localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                    localStorage.setItem('wheelLastUpdate', timestamp);
+                    
+                    updateSyncStatus('synced', 'Connected to Firebase');
+                    console.log('Prizes loaded from Firebase');
+                } else {
+                    // No data in Firebase, use defaults and save to Firebase
+                    prizes = [...defaultPrizes];
+                    await savePrizesToFirebase();
+                    updateSyncStatus('synced', 'Default prizes loaded');
+                    console.log('Default prizes saved to Firebase');
+                }
+                
+                // Set up real-time listener for prize updates
+                setupPrizeListener();
+                
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+                updateSyncStatus('error', 'Firebase connection failed');
+                
+                // Fallback to localStorage
+                const savedPrizes = localStorage.getItem('wheelPrizes');
+                if (savedPrizes) {
+                    prizes = JSON.parse(savedPrizes);
+                    updateSyncStatus('synced', 'Using cached data');
+                } else {
+                    prizes = [...defaultPrizes];
+                    updateSyncStatus('error', 'Using default prizes (offline)');
+                }
+            }
+        }
+
+        // Set up real-time listener for prize updates
+        function setupPrizeListener() {
+            if (unsubscribePrizes) {
+                unsubscribePrizes(); // Remove existing listener
             }
             
-            // Check for updates from cloud storage
-            checkForCloudUpdates();
-        }
-        
-        // Check for cloud updates
-        function checkForCloudUpdates() {
-            updateSyncStatus('pending', 'Checking for updates...');
-            
-            // In a real implementation, this would check Firebase or your backend
-            // For demo purposes, we'll simulate checking with a timeout
-            setTimeout(() => {
-                const cloudData = localStorage.getItem('wheelCloudData');
-                if (cloudData) {
-                    const cloudPrizes = JSON.parse(cloudData).prizes;
-                    const cloudTimestamp = JSON.parse(cloudData).timestamp;
-                    
-                    // Check if cloud data is newer than local data
-                    const localTimestamp = localStorage.getItem('wheelLastUpdate');
-                    
-                    if (!localTimestamp || cloudTimestamp > localTimestamp) {
-                        // Update local data with cloud data
-                        prizes = cloudPrizes;
-                        localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                        localStorage.setItem('wheelLastUpdate', cloudTimestamp);
-                        updateSyncStatus('synced', 'Updated from cloud');
-                        createWheelSegments(); // Refresh the wheel
-                    } else {
-                        updateSyncStatus('synced', 'Up to date');
+            unsubscribePrizes = db.collection('wheelConfig').doc('prizes')
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const newPrizes = doc.data().prizes;
+                        const timestamp = doc.data().timestamp;
+                        
+                        const localTimestamp = localStorage.getItem('wheelLastUpdate');
+                        
+                        if (!localTimestamp || timestamp > parseInt(localTimestamp)) {
+                            prizes = newPrizes;
+                            localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                            localStorage.setItem('wheelLastUpdate', timestamp);
+                            
+                            createWheelSegments(); // Refresh the wheel
+                            updateSyncStatus('synced', 'Updated from Firebase');
+                            console.log('Prizes updated in real-time from Firebase');
+                            
+                            // Show notification if admin panel is open
+                            if (document.getElementById('adminPanel').style.display === 'flex') {
+                                alert('Prizes have been updated from another device!');
+                                renderPrizeControls();
+                            }
+                        }
                     }
-                } else {
-                    updateSyncStatus('synced', 'No cloud data found');
-                }
-            }, 1000);
+                }, (error) => {
+                    console.error('Firebase listener error:', error);
+                    updateSyncStatus('error', 'Firebase sync error');
+                });
         }
-        
+
+        // Save prizes to Firebase
+        async function savePrizesToFirebase() {
+            updateSyncStatus('pending', 'Saving to Firebase...');
+            
+            try {
+                const prizeData = {
+                    prizes: prizes,
+                    timestamp: Date.now(),
+                    lastUpdatedBy: currentUser ? currentUser.name : 'Admin',
+                    lastUpdatedAt: new Date().toISOString()
+                };
+                
+                await db.collection('wheelConfig').doc('prizes').set(prizeData);
+                
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                localStorage.setItem('wheelLastUpdate', Date.now().toString());
+                
+                updateSyncStatus('synced', 'Saved to Firebase');
+                
+                // Show success message
+                alert('Prizes saved and synced to Firebase! All devices will now use these probabilities.');
+                
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                updateSyncStatus('error', 'Failed to save to Firebase');
+                alert('Error saving to Firebase: ' + error.message);
+            }
+        }
+
+        // Save spin result to Firebase (optional - for analytics)
+        async function saveSpinToFirebase(prize, user) {
+            try {
+                const spinData = {
+                    prize: prize.name,
+                    probability: prize.probability,
+                    user: user ? {
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone
+                    } : null,
+                    timestamp: new Date().toISOString(),
+                    device: navigator.userAgent
+                };
+                
+                await db.collection('spinHistory').add(spinData);
+                console.log('Spin saved to Firebase');
+            } catch (error) {
+                console.error('Error saving spin to Firebase:', error);
+            }
+        }
+
         // Update sync status indicator
         function updateSyncStatus(status, text) {
             const indicator = document.getElementById('syncIndicator');
             const statusText = document.getElementById('syncText');
             
-            indicator.className = 'sync-indicator ' + status;
-            statusText.textContent = text;
+            if (indicator && statusText) {
+                indicator.className = 'sync-indicator ' + status;
+                statusText.textContent = text;
+            }
         }
         
-        // Save prizes to cloud storage
-        function savePrizesToCloud() {
-            updateSyncStatus('pending', 'Saving to cloud...');
-            
-            const prizeData = {
-                prizes: prizes,
-                timestamp: Date.now()
-            };
-            
-            // In a real implementation, this would save to Firebase or your backend
-            // For demo purposes, we'll simulate saving with localStorage
-            setTimeout(() => {
-                localStorage.setItem('wheelCloudData', JSON.stringify(prizeData));
-                localStorage.setItem('wheelLastUpdate', Date.now());
-                updateSyncStatus('synced', 'Saved to cloud');
-                
-                // Show success message
-                alert('Prizes saved and synced to cloud! All devices will now use these probabilities.');
-            }, 1500);
-        }
-        
-        // Clear user data function (but keep prize settings)
+        // Clear user data function
         window.clearUserData = function() {
             if (confirm('Are you sure you want to clear all user data and start over?')) {
                 localStorage.removeItem('wheelUser');
@@ -972,7 +467,9 @@
             const userDetails = document.getElementById('userDetails');
             
             // Load prizes when page starts
-            loadPrizes();
+            loadPrizes().then(() => {
+                checkExistingUser();
+            });
             
             // Check if user is already registered
             function checkExistingUser() {
@@ -998,7 +495,7 @@
                     `;
                 }
                 
-                // Initialize wheel with current prizes (admin settings)
+                // Initialize wheel with current prizes
                 createWheelSegments();
                 updateHistory();
             }
@@ -1022,14 +519,8 @@
                 // Show wheel game
                 showWheelGame();
                 
-                // Log user data (in real app, this would be sent to server)
                 console.log('User registered:', currentUser);
             });
-            
-            // Initialize the wheel
-            function initializeWheel() {
-                checkExistingUser();
-            }
             
             // Create wheel segments with EQUAL sizes
             function createWheelSegments() {
@@ -1065,7 +556,7 @@
                 });
             }
             
-            // Spin the wheel - FIXED VERSION
+            // Spin the wheel
             function spinWheel() {
                 // Disable button during spin
                 spinBtn.disabled = true;
@@ -1097,14 +588,8 @@
                 const fullRotations = 5;
                 
                 // Calculate the angle needed to make the selected prize land at the pointer
-                // The pointer is at top (0 degrees), so we need to rotate so that the selected segment is at the top
                 const selectedSegmentMiddle = selectedPrizeIndex * segmentAngle + (segmentAngle / 2);
-                
-                // We want the selected segment to end up at the pointer (top position)
-                // So we rotate the wheel so that the selected segment's middle aligns with the pointer
                 const finalRotation = fullRotations * 360 + (360 - selectedSegmentMiddle);
-                
-                // Add some random variation within the segment for natural feel
                 const randomVariation = (Math.random() - 0.5) * (segmentAngle * 0.8);
                 const finalRotationWithVariation = finalRotation + randomVariation;
                 
@@ -1114,7 +599,6 @@
                 
                 // Show result after animation completes
                 setTimeout(function() {
-                    // The prize should be the one we selected based on probability
                     const actualPrize = prizes[selectedPrizeIndex];
                     prizeText.textContent = actualPrize.name;
                     prizeText.parentElement.classList.add('celebrate');
@@ -1133,12 +617,8 @@
                     spinHistory.unshift(historyItem);
                     updateHistory();
                     
-                    // Log spin result with user data (in real app, this would be sent to server)
-                    console.log('Spin result:', {
-                        user: currentUser,
-                        prize: actualPrize.name,
-                        time: new Date().toISOString()
-                    });
+                    // Save spin to Firebase for analytics
+                    saveSpinToFirebase(actualPrize, currentUser);
                     
                     // Re-enable button
                     spinBtn.disabled = false;
@@ -1149,7 +629,6 @@
                         prizeText.parentElement.classList.remove('celebrate');
                     }, 1500);
                     
-                    // Debug info
                     console.log('Selected prize:', actualPrize.name, 'Probability:', actualPrize.probability + '%');
                 }, 4000);
             }
@@ -1304,7 +783,7 @@
                 }
                 
                 localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                savePrizesToCloud(); // Save to cloud for all devices
+                savePrizesToFirebase(); // Save to Firebase for all devices
                 createWheelSegments(); // Update the wheel with new prizes
             }
             
@@ -1312,7 +791,7 @@
                 if (confirm('Are you sure you want to reset to default prizes?')) {
                     prizes = [...defaultPrizes];
                     localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                    savePrizesToCloud(); // Save to cloud for all devices
+                    savePrizesToFirebase(); // Save to Firebase for all devices
                     createWheelSegments(); // Update the wheel with default prizes
                     closeAdminPanel();
                 }
@@ -1349,9 +828,6 @@
                     passwordInput.blur();
                 }
             });
-            
-            // Initialize the application
-            initializeWheel();
         });
     </script>
 </body>
