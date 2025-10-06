@@ -143,6 +143,26 @@
         .new-user-btn:active {
             transform: translateY(0);
         }
+
+        .reset-btn-small {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
+            margin-top: 10px;
+        }
+        
+        .reset-btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.6);
+            background: #5a6268;
+        }
         
         .wheel-container {
             position: relative;
@@ -677,10 +697,13 @@
 
             <!-- Wheel Game (Initially Hidden) -->
             <div id="wheelGame" style="display: none;">
-                <!-- User Info Display -->
+                <!-- User Info Display with Reset Button -->
                 <div class="user-info" id="userInfo">
                     <h4>Welcome!</h4>
                     <div class="user-details" id="userDetails"></div>
+                    <button class="reset-btn-small" onclick="clearUserData()">
+                        ↻ New User / Reset
+                    </button>
                 </div>
                 
                 <div class="wheel-container">
