@@ -127,8 +127,8 @@
             width: 120px;
             font-size: 11px;
             font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            color: rgb(255, 255, 255);
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
             line-height: 1.2;
         }
         
@@ -935,29 +935,38 @@
 
         // ==================== DATA MANAGEMENT ====================
         async function loadDataFromFirebase() {
-            try {
-                // Load users
-                const usersSnapshot = await db.collection('users').get();
-                users = [];
-                usersSnapshot.forEach(doc => {
-                    users.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Load spins
-                const spinsSnapshot = await db.collection('spins').get();
-                spins = [];
-                spinsSnapshot.forEach(doc => {
-                    spins.push({ id: doc.id, ...doc.data() });
-                });
-                
-                updateCounts();
-                updateAnalytics();
-                
-            } catch (error) {
-                console.error('Error loading from Firebase:', error);
-                loadDataFromLocalStorage();
-            }
+    try {
+        // Check if we have a "dataCleared" flag in localStorage
+        const dataCleared = localStorage.getItem('dataCleared');
+        if (dataCleared) {
+            console.log('Data was recently cleared, skipping Firebase load');
+            localStorage.removeItem('dataCleared'); // Remove the flag
+            loadDataFromLocalStorage();
+            return;
         }
+
+        // Load users
+        const usersSnapshot = await db.collection('users').get();
+        users = [];
+        usersSnapshot.forEach(doc => {
+            users.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Load spins
+        const spinsSnapshot = await db.collection('spins').get();
+        spins = [];
+        spinsSnapshot.forEach(doc => {
+            spins.push({ id: doc.id, ...doc.data() });
+        });
+        
+        updateCounts();
+        updateAnalytics();
+        
+    } catch (error) {
+        console.error('Error loading from Firebase:', error);
+        loadDataFromLocalStorage();
+    }
+}
 
         function loadDataFromLocalStorage() {
             const savedUsers = localStorage.getItem('wheelUsers');
@@ -1247,18 +1256,41 @@
             }
         }
 
-        function clearAllData() {
-            if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
-                users = [];
-                spins = [];
-                localStorage.removeItem('wheelUsers');
-                localStorage.removeItem('wheelSpins');
-                localStorage.removeItem('currentUser');
-                updateCounts();
-                updateAnalytics();
-                alert('All data has been cleared.');
+        async function clearAllData() {
+    if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
+        try {
+            // Clear Firebase data if connected
+            if (firebaseInitialized) {
+                // Clear users from Firebase
+                const usersSnapshot = await db.collection('users').get();
+                const userDeletePromises = usersSnapshot.docs.map(doc => doc.ref.delete());
+                
+                // Clear spins from Firebase
+                const spinsSnapshot = await db.collection('spins').get();
+                const spinDeletePromises = spinsSnapshot.docs.map(doc => doc.ref.delete());
+                
+                await Promise.all([...userDeletePromises, ...spinDeletePromises]);
+                console.log('Firebase data cleared successfully');
             }
+        } catch (error) {
+            console.error('Error clearing Firebase data:', error);
         }
+        
+        // Clear localStorage
+        users = [];
+        spins = [];
+        localStorage.removeItem('wheelUsers');
+        localStorage.removeItem('wheelSpins');
+        localStorage.removeItem('currentUser');
+        
+        // Set flag to prevent Firebase from reloading data on next refresh
+        localStorage.setItem('dataCleared', 'true');
+        
+        updateCounts();
+        updateAnalytics();
+        alert('All data has been cleared from both Firebase and local storage.');
+    }
+}
 
         // ==================== EXPORT FUNCTIONS ====================
         function exportUsersToExcel() {
