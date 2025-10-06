@@ -790,7 +790,36 @@
         // Default admin password (you can change this)
         const ADMIN_PASSWORD = "admin123";
         
-        // Clear user data function
+        // Default prizes (only used if no prizes are saved in localStorage)
+        const defaultPrizes = [
+            { name: "Discount 10%", probability: 20, color: "#FF6384" },
+            { name: "Free Coffee", probability: 15, color: "#36A2EB" },
+            { name: "Movie Tickets", probability: 15, color: "#FFCE56" },
+            { name: "Gift Card $25", probability: 10, color: "#4BC0C0" },
+            { name: "Try Again", probability: 25, color: "#9966FF" },
+            { name: "Smartphone", probability: 5, color: "#FF9F40" },
+            { name: "Headphones", probability: 5, color: "#FF6384" },
+            { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
+        ];
+        
+        let prizes = [];
+        let spinCount = 0;
+        let spinHistory = [];
+        let currentUser = null;
+        
+        // Load prizes from localStorage or use defaults
+        function loadPrizes() {
+            const savedPrizes = localStorage.getItem('wheelPrizes');
+            if (savedPrizes) {
+                prizes = JSON.parse(savedPrizes);
+            } else {
+                prizes = [...defaultPrizes];
+                // Save default prizes to localStorage on first load
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+            }
+        }
+        
+        // Clear user data function (but keep prize settings)
         window.clearUserData = function() {
             if (confirm('Are you sure you want to clear all user data and start over?')) {
                 localStorage.removeItem('wheelUser');
@@ -820,22 +849,8 @@
             const userInfo = document.getElementById('userInfo');
             const userDetails = document.getElementById('userDetails');
             
-            // Default prizes
-            const defaultPrizes = [
-                { name: "Discount 10%", probability: 20, color: "#FF6384" },
-                { name: "Free Coffee", probability: 15, color: "#36A2EB" },
-                { name: "Movie Tickets", probability: 15, color: "#FFCE56" },
-                { name: "Gift Card $25", probability: 10, color: "#4BC0C0" },
-                { name: "Try Again", probability: 25, color: "#9966FF" },
-                { name: "Smartphone", probability: 5, color: "#FF9F40" },
-                { name: "Headphones", probability: 5, color: "#FF6384" },
-                { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
-            ];
-            
-            let prizes = JSON.parse(localStorage.getItem('wheelPrizes')) || [...defaultPrizes];
-            let spinCount = 0;
-            let spinHistory = [];
-            let currentUser = null;
+            // Load prizes when page starts
+            loadPrizes();
             
             // Check if user is already registered
             function checkExistingUser() {
@@ -861,7 +876,7 @@
                     `;
                 }
                 
-                // Initialize wheel
+                // Initialize wheel with current prizes (admin settings)
                 createWheelSegments();
                 updateHistory();
             }
@@ -1180,7 +1195,7 @@
                 }
                 
                 localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                createWheelSegments();
+                createWheelSegments(); // Update the wheel with new prizes
                 closeAdminPanel();
                 alert('Prizes saved successfully! Wheel shows equal segments with your probabilities.');
             }
@@ -1189,7 +1204,7 @@
                 if (confirm('Are you sure you want to reset to default prizes?')) {
                     prizes = [...defaultPrizes];
                     localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                    createWheelSegments();
+                    createWheelSegments(); // Update the wheel with default prizes
                     closeAdminPanel();
                 }
             }
