@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Spin Wheel - Firebase Sync</title>
+    <title>Lucky Spin Wheel - Data Analytics</title>
     <!-- Include Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Include SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -356,9 +358,9 @@
             background: white;
             padding: 30px;
             border-radius: 15px;
-            max-width: 600px;
+            max-width: 800px;
             width: 90%;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
         
@@ -381,6 +383,37 @@
             padding: 8px 15px;
             border-radius: 5px;
             cursor: pointer;
+        }
+        
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .admin-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .admin-tab.active {
+            color: #ff7e5f;
+            border-bottom-color: #ff7e5f;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
         }
         
         .prize-item {
@@ -478,6 +511,16 @@
             flex: 1;
         }
         
+        .export-btn {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
         .probability-total {
             text-align: center;
             margin: 15px 0;
@@ -495,6 +538,80 @@
             border-radius: 5px;
             font-size: 0.9rem;
             color: #1565c0;
+        }
+        
+        /* Analytics Styles */
+        .analytics-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #ff7e5f;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff7e5f;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .prize-stats {
+            margin-top: 20px;
+        }
+        
+        .prize-stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .prize-stat-name {
+            flex: 2;
+        }
+        
+        .prize-stat-count {
+            flex: 1;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .prize-stat-percentage {
+            flex: 1;
+            text-align: right;
+            color: #666;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .export-section h4 {
+            margin-bottom: 15px;
+            color: #333;
         }
         
         /* Password Panel Styles */
@@ -695,6 +812,10 @@
             .prize-inputs input {
                 width: 100%;
             }
+            
+            .analytics-stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -780,14 +901,14 @@
         </div>
         
         <div class="footer">
-            <p>© Fortune Wheel Prototype | Firebase Sync Enabled</p>
+            <p>© Fortune Wheel Prototype | Firebase Sync & Analytics</p>
         </div>
     </div>
 
     <!-- Bottom Admin Panel -->
     <div class="bottom-admin-panel">
         <button class="bottom-admin-btn" onclick="showPasswordPanel()">
-            ⚙️ Admin Panel
+            ⚙️ Admin Panel & Analytics
         </button>
     </div>
 
@@ -810,34 +931,91 @@
     <div class="admin-panel" id="adminPanel">
         <div class="admin-content">
             <div class="admin-header">
-                <h2>Admin Panel - Manage Prizes</h2>
+                <h2>Admin Panel - Analytics & Management</h2>
                 <button class="close-admin" id="closeAdmin">Close</button>
             </div>
             
-            <div class="probability-info">
-                ⓘ Wheel shows equal segments, but prizes have different probabilities
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchAdminTab('prizes')">Prize Management</button>
+                <button class="admin-tab" onclick="switchAdminTab('analytics')">Analytics</button>
+                <button class="admin-tab" onclick="switchAdminTab('export')">Data Export</button>
             </div>
             
-            <div id="prizesContainer">
-                <!-- Prize items will be generated here -->
+            <!-- Prize Management Tab -->
+            <div id="prizes-tab" class="admin-tab-content active">
+                <div class="probability-info">
+                    ⓘ Wheel shows equal segments, but prizes have different probabilities
+                </div>
+                
+                <div id="prizesContainer">
+                    <!-- Prize items will be generated here -->
+                </div>
+                
+                <div class="probability-total" id="probabilityTotal">
+                    Total Probability: 100%
+                </div>
+                
+                <button class="add-prize" id="addPrize">+ Add New Prize</button>
+                
+                <div class="admin-actions">
+                    <button class="save-btn" id="savePrizes">Save & Sync to Firebase</button>
+                    <button class="reset-btn" id="resetPrizes">Reset to Default</button>
+                </div>
             </div>
             
-            <div class="probability-total" id="probabilityTotal">
-                Total Probability: 100%
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="admin-tab-content">
+                <h3>Spin Analytics Dashboard</h3>
+                
+                <div class="analytics-stats" id="analyticsStats">
+                    <!-- Stats will be populated here -->
+                </div>
+                
+                <div class="prize-stats">
+                    <h4>Prize Distribution</h4>
+                    <div id="prizeStatsList">
+                        <!-- Prize stats will be populated here -->
+                    </div>
+                </div>
             </div>
             
-            <button class="add-prize" id="addPrize">+ Add New Prize</button>
-            
-            <div class="admin-actions">
-                <button class="save-btn" id="savePrizes">Save & Sync to Firebase</button>
-                <button class="reset-btn" id="resetPrizes">Reset to Default</button>
+            <!-- Data Export Tab -->
+            <div id="export-tab" class="admin-tab-content">
+                <h3>Data Export</h3>
+                
+                <div class="export-section">
+                    <h4>Export Spin Data</h4>
+                    <p>Download all spin history data for analysis</p>
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportSpinsToExcel()">Export to Excel</button>
+                        <button class="export-btn" onclick="exportSpinsToCSV()">Export to CSV</button>
+                    </div>
+                </div>
+                
+                <div class="export-section">
+                    <h4>Export User Data</h4>
+                    <p>Download all user registration data</p>
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportUsersToExcel()">Export to Excel</button>
+                        <button class="export-btn" onclick="exportUsersToCSV()">Export to CSV</button>
+                    </div>
+                </div>
+                
+                <div class="export-section">
+                    <h4>Export Prize Analytics</h4>
+                    <p>Download prize distribution and statistics</p>
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportAnalyticsToExcel()">Export to Excel</button>
+                        <button class="export-btn" onclick="exportAnalyticsToCSV()">Export to CSV</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         // Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
-       const firebaseConfig = {
+        const firebaseConfig = {
           apiKey: "AIzaSyCY658zB6ORJJTK-JvPI-L2co9yZnMEPR0",
           authDomain: "fortunewheel-772ab.firebaseapp.com",
           projectId: "fortunewheel-772ab",
@@ -846,6 +1024,7 @@
           appId: "1:539367805663:web:4ab6dae0a1703bd5674f6a",
           measurementId: "G-8K3KP60744"
         };
+
         // Initialize Firebase
         try {
             firebase.initializeApp(firebaseConfig);
@@ -876,6 +1055,8 @@
         let spinHistory = [];
         let currentUser = null;
         let unsubscribePrizes = null;
+        let allSpinsData = [];
+        let allUsersData = [];
 
         // Load prizes from Firebase
         async function loadPrizes() {
@@ -902,10 +1083,47 @@
                 }
                 
                 setupPrizeListener();
+                loadAllSpinsData();
+                loadAllUsersData();
                 
             } catch (error) {
                 console.error('Error loading from Firebase:', error);
                 handleFirebaseError(error);
+            }
+        }
+
+        // Load all spins data for analytics
+        async function loadAllSpinsData() {
+            try {
+                const snapshot = await db.collection('spinHistory').get();
+                allSpinsData = [];
+                snapshot.forEach(doc => {
+                    allSpinsData.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                console.log('Loaded', allSpinsData.length, 'spins for analytics');
+                updateAnalytics();
+            } catch (error) {
+                console.error('Error loading spins data:', error);
+            }
+        }
+
+        // Load all users data
+        async function loadAllUsersData() {
+            try {
+                const snapshot = await db.collection('userRegistrations').get();
+                allUsersData = [];
+                snapshot.forEach(doc => {
+                    allUsersData.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                console.log('Loaded', allUsersData.length, 'users for analytics');
+            } catch (error) {
+                console.error('Error loading users data:', error);
             }
         }
 
@@ -992,6 +1210,249 @@
             }
         }
 
+        // Save spin result to Firebase with comprehensive data
+        async function saveSpinToFirebase(prize, user) {
+            try {
+                const spinData = {
+                    prize: prize.name,
+                    probability: prize.probability,
+                    user: user ? {
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone,
+                        company: user.company
+                    } : null,
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString(),
+                    device: navigator.userAgent,
+                    prizeColor: prize.color,
+                    sessionId: localStorage.getItem('sessionId') || generateSessionId()
+                };
+                
+                await db.collection('spinHistory').add(spinData);
+                allSpinsData.push(spinData);
+                updateAnalytics();
+                console.log('Spin saved to Firebase with ID:', spinData.sessionId);
+            } catch (error) {
+                console.error('Error saving spin to Firebase:', error);
+            }
+        }
+
+        // Save user registration to Firebase
+        async function saveUserToFirebase(user) {
+            try {
+                const userData = {
+                    ...user,
+                    registrationTimestamp: new Date().toISOString(),
+                    ipAddress: await getIPAddress(),
+                    userAgent: navigator.userAgent,
+                    sessionId: localStorage.getItem('sessionId') || generateSessionId()
+                };
+                
+                await db.collection('userRegistrations').add(userData);
+                allUsersData.push(userData);
+                console.log('User saved to Firebase');
+            } catch (error) {
+                console.error('Error saving user to Firebase:', error);
+            }
+        }
+
+        // Generate session ID
+        function generateSessionId() {
+            const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('sessionId', sessionId);
+            return sessionId;
+        }
+
+        // Get IP address (simplified)
+        async function getIPAddress() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                return 'unknown';
+            }
+        }
+
+        // Update analytics dashboard
+        function updateAnalytics() {
+            const totalSpins = allSpinsData.length;
+            const uniqueUsers = new Set(allSpinsData.map(spin => spin.user?.email)).size;
+            const todaySpins = allSpinsData.filter(spin => {
+                return new Date(spin.timestamp).toDateString() === new Date().toDateString();
+            }).length;
+
+            // Calculate prize distribution
+            const prizeDistribution = {};
+            allSpinsData.forEach(spin => {
+                prizeDistribution[spin.prize] = (prizeDistribution[spin.prize] || 0) + 1;
+            });
+
+            // Update stats cards
+            document.getElementById('analyticsStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalSpins}</div>
+                    <div class="stat-label">Total Spins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${uniqueUsers}</div>
+                    <div class="stat-label">Unique Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${todaySpins}</div>
+                    <div class="stat-label">Spins Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${Object.keys(prizeDistribution).length}</div>
+                    <div class="stat-label">Active Prizes</div>
+                </div>
+            `;
+
+            // Update prize stats
+            const prizeStatsList = document.getElementById('prizeStatsList');
+            prizeStatsList.innerHTML = '';
+            
+            Object.entries(prizeDistribution)
+                .sort(([,a], [,b]) => b - a)
+                .forEach(([prize, count]) => {
+                    const percentage = ((count / totalSpins) * 100).toFixed(1);
+                    const prizeItem = document.createElement('div');
+                    prizeItem.className = 'prize-stat-item';
+                    prizeItem.innerHTML = `
+                        <div class="prize-stat-name">${prize}</div>
+                        <div class="prize-stat-count">${count}</div>
+                        <div class="prize-stat-percentage">${percentage}%</div>
+                    `;
+                    prizeStatsList.appendChild(prizeItem);
+                });
+        }
+
+        // Export functions
+        function exportSpinsToExcel() {
+            const spinsData = allSpinsData.map(spin => ({
+                'Prize': spin.prize,
+                'User Name': spin.user?.name || 'Guest',
+                'User Email': spin.user?.email || 'N/A',
+                'User Phone': spin.user?.phone || 'N/A',
+                'Company': spin.user?.company || 'N/A',
+                'Date': spin.date,
+                'Time': spin.time,
+                'Probability': spin.probability + '%',
+                'Session ID': spin.sessionId,
+                'Device': spin.device
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(spinsData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Spin History');
+            XLSX.writeFile(workbook, `spin_history_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportSpinsToCSV() {
+            const spinsData = allSpinsData.map(spin => ({
+                'Prize': spin.prize,
+                'User Name': spin.user?.name || 'Guest',
+                'User Email': spin.user?.email || 'N/A',
+                'User Phone': spin.user?.phone || 'N/A',
+                'Company': spin.user?.company || 'N/A',
+                'Date': spin.date,
+                'Time': spin.time,
+                'Probability': spin.probability + '%',
+                'Session ID': spin.sessionId,
+                'Device': spin.device
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(spinsData);
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+            downloadCSV(csv, `spin_history_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function exportUsersToExcel() {
+            const usersData = allUsersData.map(user => ({
+                'Name': user.name,
+                'Email': user.email,
+                'Phone': user.phone,
+                'Company': user.company || 'N/A',
+                'Registration Date': new Date(user.registrationTimestamp).toLocaleDateString(),
+                'Registration Time': new Date(user.registrationTimestamp).toLocaleTimeString(),
+                'Session ID': user.sessionId,
+                'IP Address': user.ipAddress
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(usersData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'User Registrations');
+            XLSX.writeFile(workbook, `user_registrations_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportUsersToCSV() {
+            const usersData = allUsersData.map(user => ({
+                'Name': user.name,
+                'Email': user.email,
+                'Phone': user.phone,
+                'Company': user.company || 'N/A',
+                'Registration Date': new Date(user.registrationTimestamp).toLocaleDateString(),
+                'Registration Time': new Date(user.registrationTimestamp).toLocaleTimeString(),
+                'Session ID': user.sessionId,
+                'IP Address': user.ipAddress
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(usersData);
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+            downloadCSV(csv, `user_registrations_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function exportAnalyticsToExcel() {
+            const prizeDistribution = {};
+            allSpinsData.forEach(spin => {
+                prizeDistribution[spin.prize] = (prizeDistribution[spin.prize] || 0) + 1;
+            });
+
+            const analyticsData = Object.entries(prizeDistribution).map(([prize, count]) => ({
+                'Prize': prize,
+                'Spin Count': count,
+                'Percentage': ((count / allSpinsData.length) * 100).toFixed(1) + '%',
+                'Expected Probability': prizes.find(p => p.name === prize)?.probability + '%' || 'N/A'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(analyticsData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Prize Analytics');
+            XLSX.writeFile(workbook, `prize_analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportAnalyticsToCSV() {
+            const prizeDistribution = {};
+            allSpinsData.forEach(spin => {
+                prizeDistribution[spin.prize] = (prizeDistribution[spin.prize] || 0) + 1;
+            });
+
+            const analyticsData = Object.entries(prizeDistribution).map(([prize, count]) => ({
+                'Prize': prize,
+                'Spin Count': count,
+                'Percentage': ((count / allSpinsData.length) * 100).toFixed(1) + '%',
+                'Expected Probability': prizes.find(p => p.name === prize)?.probability + '%' || 'N/A'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(analyticsData);
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+            downloadCSV(csv, `prize_analytics_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
         // Update sync status indicator
         function updateSyncStatus(status, text) {
             const indicator = document.getElementById('syncIndicator');
@@ -1011,6 +1472,26 @@
                 location.reload();
             }
         };
+
+        // Admin tab switching
+        function switchAdminTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.admin-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Refresh analytics when switching to analytics tab
+            if (tabName === 'analytics') {
+                updateAnalytics();
+            }
+        }
 
         // Password Functions
         window.showPasswordPanel = function() {
@@ -1042,6 +1523,7 @@
         function openAdminPanel() {
             document.getElementById('adminPanel').style.display = 'flex';
             renderPrizeControls();
+            updateAnalytics();
         }
         
         function closeAdminPanel() {
@@ -1142,6 +1624,11 @@
             }
         }
 
+        // The rest of your existing DOMContentLoaded and other functions...
+        // [Previous JavaScript code for wheel spinning, user registration, etc. remains the same]
+        // Make sure to call saveSpinToFirebase() in your spin function
+        // Make sure to call saveUserToFirebase() when users register
+
         document.addEventListener('DOMContentLoaded', function() {
             // Load prizes when page starts
             loadPrizes().then(() => {
@@ -1193,6 +1680,7 @@
                 };
                 
                 localStorage.setItem('wheelUser', JSON.stringify(currentUser));
+                saveUserToFirebase(currentUser);
                 showWheelGame();
                 console.log('User registered:', currentUser);
             });
@@ -1285,6 +1773,9 @@
                     };
                     spinHistory.unshift(historyItem);
                     updateHistory();
+                    
+                    // Save spin to Firebase with comprehensive data
+                    saveSpinToFirebase(actualPrize, currentUser);
                     
                     spinBtn.disabled = false;
                     spinBtn.textContent = "SPIN THE WHEEL";
