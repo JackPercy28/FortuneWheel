@@ -487,6 +487,37 @@
         .celebrate {
             animation: celebrate 0.5s ease-in-out 3;
         }
+
+        /* ADD THESE NEW STYLES */
+        .switch-user-btn, .new-spin-btn, .new-user-btn {
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .switch-user-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .new-spin-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .new-user-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .switch-user-btn:hover, .new-spin-btn:hover, .new-user-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -555,6 +586,16 @@
                 <div class="result">
                     <div>Your prize will appear here</div>
                     <div class="prize-text" id="prizeText">-</div>
+                </div>
+
+                <!-- ADDED BUTTONS FOR USER SWITCHING -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="new-spin-btn" onclick="newSpin()">
+                        🎯 New Spin
+                    </button>
+                    <button class="switch-user-btn" onclick="switchUser()">
+                        🔄 New User
+                    </button>
                 </div>
                 
                 <div id="gameFirebaseStatus" class="firebase-status status-loading">
@@ -1150,6 +1191,10 @@
                     <strong>Phone:</strong> ${currentUser.phone}<br>
                     <strong>Email:</strong> ${currentUser.email}
                     ${currentUser.company ? `<br><strong>Company:</strong> ${currentUser.company}` : ''}
+                    <br><br>
+                    <button class="switch-user-btn" onclick="switchUser()">
+                        🔄 Register New User
+                    </button>
                 `;
             }
         }
@@ -1198,10 +1243,54 @@
                 
                 await saveSpinToFirebase(actualPrize, currentUser);
                 
+                // Re-enable spin button but change text to indicate multiple spins are allowed
                 spinBtn.disabled = false;
-                spinBtn.textContent = "SPIN THE WHEEL";
+                spinBtn.textContent = "SPIN AGAIN";
+                
                 setTimeout(() => prizeText.parentElement.classList.remove('celebrate'), 1500);
             }, 4000);
+        }
+
+        // ==================== USER SWITCHING FUNCTIONS ====================
+        function switchUser() {
+            if (confirm('Are you sure you want to register a new user? Current user data will be cleared.')) {
+                // Clear current user data
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                
+                // Reset UI
+                document.getElementById('prizeText').textContent = '-';
+                const wheel = document.getElementById('wheel');
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                
+                // Reset spin button
+                const spinBtn = document.getElementById('spinBtn');
+                spinBtn.disabled = false;
+                spinBtn.textContent = "SPIN THE WHEEL";
+                
+                // Show registration form
+                document.getElementById('registrationForm').style.display = 'block';
+                document.getElementById('wheelGame').style.display = 'none';
+                document.getElementById('userForm').reset();
+                
+                alert('You can now register a new user.');
+            }
+        }
+
+        function newSpin() {
+            // Reset the wheel and prize display for a new spin
+            document.getElementById('prizeText').textContent = '-';
+            const wheel = document.getElementById('wheel');
+            wheel.style.transition = 'none';
+            wheel.style.transform = 'rotate(0deg)';
+            
+            // Re-enable spin button if it was disabled
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = false;
+            spinBtn.textContent = "SPIN THE WHEEL";
+            
+            alert('Ready for a new spin! Click "SPIN THE WHEEL" to try again.');
         }
 
         // ==================== ADMIN PANEL FUNCTIONS ====================
