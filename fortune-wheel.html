@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Fortune Wheel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Registration Form Styles */
+        .registration-form {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            border-color: #ff7e5f;
+            outline: none;
+        }
+        
+        .form-group input:invalid {
+            border-color: #ff4757;
+        }
+        
+        .form-group input:valid {
+            border-color: #2ed573;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 126, 95, 0.6);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            box-shadow: 0 0 0 10px white, 0 0 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 50%;
+            top: 0;
+            transform-origin: left bottom;
+            overflow: hidden;
+        }
+        
+        .segment-text {
+            position: absolute;
+            left: 20px;
+            top: 10%;
+            transform: translateY(-50%) rotate(90deg);
+            transform-origin: left center;
+            text-align: center;
+            width: 120px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            line-height: 1.2;
+        }
+        
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #333;
+            border: 4px solid #ff7e5f;
+        }
+        
+        .wheel-pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 40px;
+            background-color: #ff7e5f;
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+            z-index: 20;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        }
+        
+        .btn-spin {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+            margin: 0 auto 20px auto;
+            display: block;
+        }
+        
+        .btn-spin:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 126, 95, 0.6);
+        }
+        
+        .btn-spin:active {
+            transform: translateY(0);
+        }
+        
+        .btn-spin:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            width: 100%;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .prize-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff7e5f;
+        }
+        
+        .history {
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .history h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f1f1f1;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Admin Panel Styles */
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .admin-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .admin-header h2 {
+            color: #333;
+            margin: 0;
+        }
+        
+        .close-admin {
+            background: #ff7e5f;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .prize-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .prize-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+        }
+        
+        .prize-inputs {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .prize-inputs input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .prize-name {
+            flex: 2;
+        }
+        
+        .prize-probability {
+            flex: 1;
+            max-width: 80px;
+        }
+        
+        .prize-color-input {
+            flex: 0.5;
+            max-width: 60px;
+            height: 40px;
+            padding: 0;
+            border: none;
+        }
+        
+        .remove-prize {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .add-prize {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 15px;
+            width: 100%;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .save-btn {
+            background: #3742fa;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .reset-btn {
+            background: #ffa502;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .probability-total {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .probability-info {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+        
+        /* Password Panel Styles */
+        .password-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .password-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .password-header {
+            margin-bottom: 20px;
+        }
+        
+        .password-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .password-input:focus {
+            border-color: #ff7e5f;
+            outline: none;
+        }
+        
+        .password-btn {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
+            width: 100%;
+        }
+        
+        .password-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
+        }
+        
+        .password-error {
+            color: #ff4757;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        /* User Info Display */
+        .user-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .user-info h4 {
+            color: #1565c0;
+            margin-bottom: 8px;
+        }
+        
+        .user-details {
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .celebrate {
+            animation: celebrate 0.5s ease-in-out 3;
+        }
+        
+        @media (max-width: 500px) {
+            .wheel-container {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .segment-text {
+                font-size: 10px;
+                width: 100px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .prize-inputs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .prize-inputs input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<style>
+    .bottom-admin-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #2c3e50;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        z-index: 999;
+        border-top: 3px solid #ff7e5f;
+    }
+    
+    .bottom-admin-btn {
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
+    }
+    
+    .bottom-admin-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lucky Spin Wheel</h1>
+            <p>Spin to win amazing prizes!</p>
+        </div>
+        
+        <div class="content">
+            <!-- Registration Form -->
+            <div class="registration-form" id="registrationForm">
+                <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Enter Your Details</h2>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="userName">Full Name *</label>
+                        <input type="text" id="userName" name="name" required placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userPhone">Phone Number *</label>
+                        <input type="tel" id="userPhone" name="phone" required placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userEmail">Email Address *</label>
+                        <input type="email" id="userEmail" name="email" required placeholder="Enter your email address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userCompany">Company (Optional)</label>
+                        <input type="text" id="userCompany" name="company" placeholder="Enter your company name">
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Submit & Spin the Wheel</button>
+                </form>
+            </div>
+
+            <!-- Wheel Game (Initially Hidden) -->
+            <div id="wheelGame" style="display: none;">
+                <!-- User Info Display -->
+                <div class="user-info" id="userInfo">
+                    <h4>Welcome!</h4>
+                    <div class="user-details" id="userDetails"></div>
+                </div>
+                
+                <div class="wheel-container">
+                    <div class="wheel" id="wheel">
+                        <!-- Wheel segments will be generated by JavaScript -->
+                    </div>
+                    <div class="wheel-center">SPIN</div>
+                    <div class="wheel-pointer"></div>
+                </div>
+                
+                <button class="btn-spin" id="spinBtn">SPIN THE WHEEL</button>
+                
+                <div class="result">
+                    <div class="result-text">Your prize will appear here</div>
+                    <div class="prize-text" id="prizeText">-</div>
+                </div>
+                
+                <div class="history">
+                    <h3>Spin History</h3>
+                    <div class="history-list" id="historyList">
+                        <!-- History items will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© Fortune Wheel Prototype | No Database Ver </p>
+        </div>
+    </div>
+
+    <!-- Bottom Admin Panel -->
+    <div class="bottom-admin-panel">
+        <button class="bottom-admin-btn" onclick="showPasswordPanel()">
+            ⚙️ Admin Panel
+        </button>
+    </div>
+
+    <!-- Password Panel -->
+    <div class="password-panel" id="passwordPanel">
+        <div class="password-content">
+            <div class="password-header">
+                <h2>Admin Access Required</h2>
+                <p>Please enter the admin password:</p>
+            </div>
+            <input type="password" class="password-input" id="passwordInput" placeholder="Enter password" onkeypress="handlePasswordKeypress(event)">
+            <button class="password-btn" onclick="checkPassword()">Access Admin Panel</button>
+            <div class="password-error" id="passwordError">
+                Incorrect password. Please try again.
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>Admin Panel - Manage Prizes</h2>
+                <button class="close-admin" id="closeAdmin">Close</button>
+            </div>
+            
+            <div class="probability-info">
+                ⓘ Wheel shows equal segments, but prizes have different probabilities
+            </div>
+            
+            <div id="prizesContainer">
+                <!-- Prize items will be generated here -->
+            </div>
+            
+            <div class="probability-total" id="probabilityTotal">
+                Total Probability: 100%
+            </div>
+            
+            <button class="add-prize" id="addPrize">+ Add New Prize</button>
+            
+            <div class="admin-actions">
+                <button class="save-btn" id="savePrizes">Save Changes</button>
+                <button class="reset-btn" id="resetPrizes">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default admin password (you can change this)
+        const ADMIN_PASSWORD = "admin123";
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const wheel = document.getElementById('wheel');
+            const spinBtn = document.getElementById('spinBtn');
+            const prizeText = document.getElementById('prizeText');
+            const historyList = document.getElementById('historyList');
+            const adminPanel = document.getElementById('adminPanel');
+            const closeAdmin = document.getElementById('closeAdmin');
+            const prizesContainer = document.getElementById('prizesContainer');
+            const probabilityTotal = document.getElementById('probabilityTotal');
+            const addPrize = document.getElementById('addPrize');
+            const savePrizes = document.getElementById('savePrizes');
+            const resetPrizes = document.getElementById('resetPrizes');
+            const passwordPanel = document.getElementById('passwordPanel');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordError = document.getElementById('passwordError');
+            const registrationForm = document.getElementById('registrationForm');
+            const wheelGame = document.getElementById('wheelGame');
+            const userForm = document.getElementById('userForm');
+            const userInfo = document.getElementById('userInfo');
+            const userDetails = document.getElementById('userDetails');
+            
+            // Default prizes
+            const defaultPrizes = [
+                { name: "Discount 10%", probability: 20, color: "#FF6384" },
+                { name: "Free Coffee", probability: 15, color: "#36A2EB" },
+                { name: "Movie Tickets", probability: 15, color: "#FFCE56" },
+                { name: "Gift Card $25", probability: 10, color: "#4BC0C0" },
+                { name: "Try Again", probability: 25, color: "#9966FF" },
+                { name: "Smartphone", probability: 5, color: "#FF9F40" },
+                { name: "Headphones", probability: 5, color: "#FF6384" },
+                { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
+            ];
+            
+            let prizes = JSON.parse(localStorage.getItem('wheelPrizes')) || [...defaultPrizes];
+            let spinCount = 0;
+            let spinHistory = [];
+            let currentUser = null;
+            
+            // Check if user is already registered
+            function checkExistingUser() {
+                const savedUser = localStorage.getItem('wheelUser');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                    showWheelGame();
+                }
+            }
+            
+            // Show wheel game after registration
+            function showWheelGame() {
+                registrationForm.style.display = 'none';
+                wheelGame.style.display = 'block';
+                
+                // Display user info
+                if (currentUser) {
+                    userDetails.innerHTML = `
+                        <strong>Name:</strong> ${currentUser.name}<br>
+                        <strong>Phone:</strong> ${currentUser.phone}<br>
+                        <strong>Email:</strong> ${currentUser.email}
+                        ${currentUser.company ? `<br><strong>Company:</strong> ${currentUser.company}` : ''}
+                    `;
+                }
+                
+                // Initialize wheel
+                createWheelSegments();
+                updateHistory();
+            }
+            
+            // Handle form submission
+            userForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(userForm);
+                currentUser = {
+                    name: formData.get('name'),
+                    phone: formData.get('phone'),
+                    email: formData.get('email'),
+                    company: formData.get('company'),
+                    registrationTime: new Date().toISOString()
+                };
+                
+                // Save user data to localStorage
+                localStorage.setItem('wheelUser', JSON.stringify(currentUser));
+                
+                // Show wheel game
+                showWheelGame();
+                
+                // Log user data (in real app, this would be sent to server)
+                console.log('User registered:', currentUser);
+            });
+            
+            // Initialize the wheel
+            function initializeWheel() {
+                checkExistingUser();
+            }
+            
+            // Create wheel segments with EQUAL sizes
+            function createWheelSegments() {
+                wheel.innerHTML = '';
+                
+                const numberOfSegments = prizes.length;
+                const segmentAngle = 360 / numberOfSegments;
+                
+                // Create a conic gradient with equal segments
+                const conicGradient = [];
+                prizes.forEach((prize, index) => {
+                    const startAngle = index * segmentAngle;
+                    const endAngle = (index + 1) * segmentAngle;
+                    conicGradient.push(`${prize.color} ${startAngle}deg ${endAngle}deg`);
+                });
+                
+                wheel.style.background = `conic-gradient(${conicGradient.join(', ')})`;
+                
+                // Add segment text containers
+                prizes.forEach((prize, index) => {
+                    const segment = document.createElement('div');
+                    segment.className = 'wheel-segment';
+                    
+                    const angle = index * segmentAngle;
+                    segment.style.transform = `rotate(${angle}deg)`;
+                    
+                    const text = document.createElement('div');
+                    text.className = 'segment-text';
+                    text.textContent = prize.name;
+                    segment.appendChild(text);
+                    
+                    wheel.appendChild(segment);
+                });
+            }
+            
+            // Calculate which prize is at the pointer based on final rotation
+            function getPrizeFromRotation(rotation) {
+                const normalizedRotation = (360 - (rotation % 360)) % 360;
+                const numberOfSegments = prizes.length;
+                const segmentAngle = 360 / numberOfSegments;
+                
+                // Determine which visual segment the pointer is on
+                const segmentIndex = Math.floor(normalizedRotation / segmentAngle);
+                
+                // Return the prize for that visual segment (this ensures visual match)
+                return prizes[segmentIndex];
+            }
+            
+            // Spin the wheel - FIXED VERSION
+            function spinWheel() {
+                // Disable button during spin
+                spinBtn.disabled = true;
+                spinBtn.textContent = "Spinning...";
+                
+                // Reset wheel position
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                
+                // Force reflow
+                void wheel.offsetWidth;
+                
+                // First, use probability to determine which prize should win
+                const randomValue = Math.random() * 100;
+                let cumulativeProbability = 0;
+                let selectedPrizeIndex = 0;
+                
+                for (let i = 0; i < prizes.length; i++) {
+                    cumulativeProbability += prizes[i].probability;
+                    if (randomValue <= cumulativeProbability) {
+                        selectedPrizeIndex = i;
+                        break;
+                    }
+                }
+                
+                // Now calculate the rotation to make that prize land at the pointer
+                const numberOfSegments = prizes.length;
+                const segmentAngle = 360 / numberOfSegments;
+                const fullRotations = 5;
+                
+                // Calculate the angle needed to make the selected prize land at the pointer
+                // The pointer is at top (0 degrees), so we need to rotate so that the selected segment is at the top
+                const selectedSegmentMiddle = selectedPrizeIndex * segmentAngle + (segmentAngle / 2);
+                
+                // We want the selected segment to end up at the pointer (top position)
+                // So we rotate the wheel so that the selected segment's middle aligns with the pointer
+                const finalRotation = fullRotations * 360 + (360 - selectedSegmentMiddle);
+                
+                // Add some random variation within the segment for natural feel
+                const randomVariation = (Math.random() - 0.5) * (segmentAngle * 0.8);
+                const finalRotationWithVariation = finalRotation + randomVariation;
+                
+                // Apply rotation with animation
+                wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+                wheel.style.transform = `rotate(${finalRotationWithVariation}deg)`;
+                
+                // Show result after animation completes
+                setTimeout(function() {
+                    // The prize should be the one we selected based on probability
+                    const actualPrize = prizes[selectedPrizeIndex];
+                    prizeText.textContent = actualPrize.name;
+                    prizeText.parentElement.classList.add('celebrate');
+                    
+                    // Add to history with user info
+                    spinCount++;
+                    const historyItem = {
+                        id: spinCount,
+                        prize: actualPrize.name,
+                        time: new Date().toLocaleTimeString(),
+                        user: currentUser ? {
+                            name: currentUser.name,
+                            email: currentUser.email
+                        } : null
+                    };
+                    spinHistory.unshift(historyItem);
+                    updateHistory();
+                    
+                    // Log spin result with user data (in real app, this would be sent to server)
+                    console.log('Spin result:', {
+                        user: currentUser,
+                        prize: actualPrize.name,
+                        time: new Date().toISOString()
+                    });
+                    
+                    // Re-enable button
+                    spinBtn.disabled = false;
+                    spinBtn.textContent = "SPIN THE WHEEL";
+                    
+                    // Remove celebration animation after it completes
+                    setTimeout(() => {
+                        prizeText.parentElement.classList.remove('celebrate');
+                    }, 1500);
+                    
+                    // Debug info
+                    console.log('Selected prize:', actualPrize.name, 'Probability:', actualPrize.probability + '%');
+                }, 4000);
+            }
+            
+            // Update spin history
+            function updateHistory() {
+                historyList.innerHTML = '';
+                
+                // Show only last 5 spins
+                const recentHistory = spinHistory.slice(0, 5);
+                
+                if (recentHistory.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'history-item';
+                    emptyMsg.textContent = 'No spins yet';
+                    emptyMsg.style.justifyContent = 'center';
+                    historyList.appendChild(emptyMsg);
+                    return;
+                }
+                
+                recentHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const prizeSpan = document.createElement('span');
+                    prizeSpan.textContent = item.prize;
+                    
+                    const timeSpan = document.createElement('span');
+                    timeSpan.textContent = item.time;
+                    timeSpan.style.color = '#666';
+                    timeSpan.style.fontSize = '0.9rem';
+                    
+                    historyItem.appendChild(prizeSpan);
+                    historyItem.appendChild(timeSpan);
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            // Password Functions
+            window.showPasswordPanel = function() {
+                passwordPanel.style.display = 'flex';
+                passwordInput.value = '';
+                passwordError.style.display = 'none';
+                passwordInput.focus();
+            }
+            
+            window.checkPassword = function() {
+                const enteredPassword = passwordInput.value;
+                if (enteredPassword === ADMIN_PASSWORD) {
+                    passwordPanel.style.display = 'none';
+                    openAdminPanel();
+                } else {
+                    passwordError.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            }
+            
+            window.handlePasswordKeypress = function(event) {
+                if (event.key === 'Enter') {
+                    checkPassword();
+                }
+            }
+            
+            // Admin Panel Functions
+            function openAdminPanel() {
+                adminPanel.style.display = 'flex';
+                renderPrizeControls();
+            }
+            
+            function closeAdminPanel() {
+                adminPanel.style.display = 'none';
+            }
+            
+            function renderPrizeControls() {
+                prizesContainer.innerHTML = '';
+                let totalProbability = 0;
+                
+                prizes.forEach((prize, index) => {
+                    totalProbability += prize.probability;
+                    
+                    const prizeItem = document.createElement('div');
+                    prizeItem.className = 'prize-item';
+                    
+                    prizeItem.innerHTML = `
+                        <div class="prize-color" style="background-color: ${prize.color}"></div>
+                        <div class="prize-inputs">
+                            <input type="text" class="prize-name" value="${prize.name}" placeholder="Prize Name">
+                            <input type="number" class="prize-probability" value="${prize.probability}" min="1" max="100" placeholder="%">
+                            <input type="color" class="prize-color-input" value="${prize.color}">
+                        </div>
+                        <button class="remove-prize" data-index="${index}">×</button>
+                    `;
+                    
+                    prizesContainer.appendChild(prizeItem);
+                });
+                
+                probabilityTotal.textContent = `Total Probability: ${totalProbability}%`;
+                probabilityTotal.style.color = totalProbability === 100 ? 'green' : 'red';
+                
+                // Add event listeners to remove buttons
+                document.querySelectorAll('.remove-prize').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        prizes.splice(index, 1);
+                        renderPrizeControls();
+                    });
+                });
+                
+                // Add event listeners to inputs for real-time updates
+                document.querySelectorAll('.prize-name, .prize-probability, .prize-color-input').forEach(input => {
+                    input.addEventListener('input', updatePrizeFromInputs);
+                });
+            }
+            
+            function updatePrizeFromInputs() {
+                const prizeItems = document.querySelectorAll('.prize-item');
+                let totalProbability = 0;
+                
+                prizeItems.forEach((item, index) => {
+                    const name = item.querySelector('.prize-name').value;
+                    const probability = parseInt(item.querySelector('.prize-probability').value) || 0;
+                    const color = item.querySelector('.prize-color-input').value;
+                    
+                    prizes[index] = { name, probability, color };
+                    totalProbability += probability;
+                    
+                    // Update color preview
+                    item.querySelector('.prize-color').style.backgroundColor = color;
+                });
+                
+                probabilityTotal.textContent = `Total Probability: ${totalProbability}%`;
+                probabilityTotal.style.color = totalProbability === 100 ? 'green' : 'red';
+            }
+            
+            function addNewPrize() {
+                prizes.push({
+                    name: "New Prize",
+                    probability: Math.floor(100 / (prizes.length + 1)),
+                    color: "#" + Math.floor(Math.random()*16777215).toString(16)
+                });
+                renderPrizeControls();
+            }
+            
+            function savePrizeSettings() {
+                updatePrizeFromInputs();
+                const totalProbability = prizes.reduce((sum, p) => sum + p.probability, 0);
+                
+                if (totalProbability !== 100) {
+                    alert(`Total probability must be 100%. Current total: ${totalProbability}%`);
+                    return;
+                }
+                
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                createWheelSegments();
+                closeAdminPanel();
+                alert('Prizes saved successfully! Wheel shows equal segments with your probabilities.');
+            }
+            
+            function resetToDefault() {
+                if (confirm('Are you sure you want to reset to default prizes?')) {
+                    prizes = [...defaultPrizes];
+                    localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                    createWheelSegments();
+                    closeAdminPanel();
+                }
+            }
+            
+            // Event Listeners
+            spinBtn.addEventListener('click', spinWheel);
+            closeAdmin.addEventListener('click', closeAdminPanel);
+            addPrize.addEventListener('click', addNewPrize);
+            savePrizes.addEventListener('click', savePrizeSettings);
+            resetPrizes.addEventListener('click', resetToDefault);
+            
+            // Keyboard support (Space key to spin)
+            document.addEventListener('keydown', function(event) {
+                if (event.code === 'Space' && !spinBtn.disabled) {
+                    event.preventDefault();
+                    spinWheel();
+                }
+            });
+            
+            // Close admin panel when clicking outside
+            adminPanel.addEventListener('click', function(event) {
+                if (event.target === adminPanel) {
+                    closeAdminPanel();
+                }
+            });
+            
+            // Close password panel when clicking outside
+            passwordPanel.addEventListener('click', function(event) {
+                if (event.target === passwordPanel) {
+                    passwordPanel.style.display = 'none';
+                    passwordError.style.display = 'none';
+                    passwordInput.value = '';
+                    passwordInput.blur();
+                }
+            });
+            
+            // Initialize the application
+            initializeWheel();
+        });
+    </script>
+</body>
+</html>
