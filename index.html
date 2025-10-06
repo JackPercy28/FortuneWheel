@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Spin Wheel - Cloud Sync</title>
+    <title>Lucky Spin Wheel - Firebase Sync</title>
+    <!-- Include Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -622,6 +625,37 @@
             background: #ff4757;
         }
         
+        .bottom-admin-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            z-index: 999;
+            border-top: 3px solid #ff7e5f;
+        }
+        
+        .bottom-admin-btn {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
+        }
+        
+        .bottom-admin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
+        }
+        
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -664,44 +698,12 @@
         }
     </style>
 </head>
-<style>
-    .bottom-admin-panel {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #2c3e50;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        z-index: 999;
-        border-top: 3px solid #ff7e5f;
-    }
-    
-    .bottom-admin-btn {
-        background: linear-gradient(to right, #ff7e5f, #feb47b);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
-    }
-    
-    .bottom-admin-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
-    }
-</style>
 
 <body>
     <!-- Sync Status Indicator -->
     <div class="sync-status" id="syncStatus">
         <div class="sync-indicator" id="syncIndicator"></div>
-        <span id="syncText">Checking for updates...</span>
+        <span id="syncText">Initializing Firebase...</span>
     </div>
 
     <div class="container">
@@ -778,7 +780,7 @@
         </div>
         
         <div class="footer">
-            <p>© Fortune Wheel Prototype | Cloud Sync Enabled</p>
+            <p>© Fortune Wheel Prototype | Firebase Sync Enabled</p>
         </div>
     </div>
 
@@ -827,17 +829,37 @@
             <button class="add-prize" id="addPrize">+ Add New Prize</button>
             
             <div class="admin-actions">
-                <button class="save-btn" id="savePrizes">Save & Sync Changes</button>
+                <button class="save-btn" id="savePrizes">Save & Sync to Firebase</button>
                 <button class="reset-btn" id="resetPrizes">Reset to Default</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Default admin password (you can change this)
+        // Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
+       const firebaseConfig = {
+          apiKey: "AIzaSyCY658zB6ORJJTK-JvPI-L2co9yZnMEPR0",
+          authDomain: "fortunewheel-772ab.firebaseapp.com",
+          projectId: "fortunewheel-772ab",
+          storageBucket: "fortunewheel-772ab.firebasestorage.app",
+          messagingSenderId: "539367805663",
+          appId: "1:539367805663:web:4ab6dae0a1703bd5674f6a",
+          measurementId: "G-8K3KP60744"
+        };
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.log("Firebase initialization error:", error);
+        }
+        
+        const db = firebase.firestore();
+
+        // Default admin password
         const ADMIN_PASSWORD = "admin123";
         
-        // Default prizes (only used if no prizes are saved in localStorage)
+        // Default prizes
         const defaultPrizes = [
             { name: "Discount 10%", probability: 20, color: "#FF6384" },
             { name: "Free Coffee", probability: 15, color: "#36A2EB" },
@@ -849,99 +871,139 @@
             { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
         ];
         
-        // Firebase configuration (replace with your actual Firebase config)
-        const firebaseConfig = {
-            apiKey: "demo-api-key",
-            authDomain: "demo-project.firebaseapp.com",
-            projectId: "demo-project",
-            storageBucket: "demo-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "demo-app-id"
-        };
-        
         let prizes = [];
         let spinCount = 0;
         let spinHistory = [];
         let currentUser = null;
-        let lastSyncTime = null;
-        
-        // Load prizes from localStorage or use defaults
-        function loadPrizes() {
+        let unsubscribePrizes = null;
+
+        // Load prizes from Firebase
+        async function loadPrizes() {
+            updateSyncStatus('pending', 'Connecting to Firebase...');
+            
+            try {
+                const doc = await db.collection('wheelConfig').doc('prizes').get();
+                
+                if (doc.exists) {
+                    const firebasePrizes = doc.data().prizes;
+                    const timestamp = doc.data().timestamp;
+                    
+                    prizes = firebasePrizes;
+                    localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                    localStorage.setItem('wheelLastUpdate', timestamp);
+                    
+                    updateSyncStatus('synced', 'Connected to Firebase');
+                    console.log('Prizes loaded from Firebase');
+                } else {
+                    prizes = [...defaultPrizes];
+                    await savePrizesToFirebase();
+                    updateSyncStatus('synced', 'Default prizes loaded');
+                    console.log('Default prizes saved to Firebase');
+                }
+                
+                setupPrizeListener();
+                
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+                handleFirebaseError(error);
+            }
+        }
+
+        // Handle Firebase errors gracefully
+        function handleFirebaseError(error) {
+            updateSyncStatus('error', 'Firebase connection failed');
+            
             const savedPrizes = localStorage.getItem('wheelPrizes');
             if (savedPrizes) {
                 prizes = JSON.parse(savedPrizes);
+                updateSyncStatus('synced', 'Using cached data (offline)');
             } else {
                 prizes = [...defaultPrizes];
-                // Save default prizes to localStorage on first load
-                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                updateSyncStatus('error', 'Using default prizes (offline)');
             }
             
-            // Check for updates from cloud storage
-            checkForCloudUpdates();
+            if (typeof createWheelSegments === 'function') {
+                createWheelSegments();
+            }
         }
-        
-        // Check for cloud updates
-        function checkForCloudUpdates() {
-            updateSyncStatus('pending', 'Checking for updates...');
-            
-            // In a real implementation, this would check Firebase or your backend
-            // For demo purposes, we'll simulate checking with a timeout
-            setTimeout(() => {
-                const cloudData = localStorage.getItem('wheelCloudData');
-                if (cloudData) {
-                    const cloudPrizes = JSON.parse(cloudData).prizes;
-                    const cloudTimestamp = JSON.parse(cloudData).timestamp;
-                    
-                    // Check if cloud data is newer than local data
-                    const localTimestamp = localStorage.getItem('wheelLastUpdate');
-                    
-                    if (!localTimestamp || cloudTimestamp > localTimestamp) {
-                        // Update local data with cloud data
-                        prizes = cloudPrizes;
-                        localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                        localStorage.setItem('wheelLastUpdate', cloudTimestamp);
-                        updateSyncStatus('synced', 'Updated from cloud');
-                        createWheelSegments(); // Refresh the wheel
-                    } else {
-                        updateSyncStatus('synced', 'Up to date');
-                    }
-                } else {
-                    updateSyncStatus('synced', 'No cloud data found');
+
+        // Set up real-time listener for prize updates
+        function setupPrizeListener() {
+            try {
+                if (unsubscribePrizes) {
+                    unsubscribePrizes();
                 }
-            }, 1000);
+                
+                unsubscribePrizes = db.collection('wheelConfig').doc('prizes')
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const newPrizes = doc.data().prizes;
+                            const timestamp = doc.data().timestamp;
+                            
+                            const localTimestamp = localStorage.getItem('wheelLastUpdate');
+                            
+                            if (!localTimestamp || timestamp > parseInt(localTimestamp)) {
+                                prizes = newPrizes;
+                                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                                localStorage.setItem('wheelLastUpdate', timestamp);
+                                
+                                createWheelSegments();
+                                updateSyncStatus('synced', 'Updated from Firebase');
+                                console.log('Prizes updated in real-time from Firebase');
+                            }
+                        }
+                    }, (error) => {
+                        console.error('Firebase listener error:', error);
+                        updateSyncStatus('error', 'Firebase sync error');
+                    });
+            } catch (error) {
+                console.error('Error setting up listener:', error);
+            }
         }
-        
+
+        // Save prizes to Firebase
+        async function savePrizesToFirebase() {
+            updateSyncStatus('pending', 'Saving to Firebase...');
+            
+            try {
+                const prizeData = {
+                    prizes: prizes,
+                    timestamp: Date.now(),
+                    lastUpdatedBy: currentUser ? currentUser.name : 'Admin',
+                    lastUpdatedAt: new Date().toISOString()
+                };
+                
+                await db.collection('wheelConfig').doc('prizes').set(prizeData);
+                
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                localStorage.setItem('wheelLastUpdate', Date.now().toString());
+                
+                updateSyncStatus('synced', 'Saved to Firebase');
+                
+                alert('Prizes saved and synced to Firebase! All devices will now use these probabilities.');
+                
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                updateSyncStatus('error', 'Failed to save to Firebase');
+                alert('Error saving to Firebase. Using local storage instead.');
+                
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                createWheelSegments();
+            }
+        }
+
         // Update sync status indicator
         function updateSyncStatus(status, text) {
             const indicator = document.getElementById('syncIndicator');
             const statusText = document.getElementById('syncText');
             
-            indicator.className = 'sync-indicator ' + status;
-            statusText.textContent = text;
+            if (indicator && statusText) {
+                indicator.className = 'sync-indicator ' + status;
+                statusText.textContent = text;
+            }
         }
         
-        // Save prizes to cloud storage
-        function savePrizesToCloud() {
-            updateSyncStatus('pending', 'Saving to cloud...');
-            
-            const prizeData = {
-                prizes: prizes,
-                timestamp: Date.now()
-            };
-            
-            // In a real implementation, this would save to Firebase or your backend
-            // For demo purposes, we'll simulate saving with localStorage
-            setTimeout(() => {
-                localStorage.setItem('wheelCloudData', JSON.stringify(prizeData));
-                localStorage.setItem('wheelLastUpdate', Date.now());
-                updateSyncStatus('synced', 'Saved to cloud');
-                
-                // Show success message
-                alert('Prizes saved and synced to cloud! All devices will now use these probabilities.');
-            }, 1500);
-        }
-        
-        // Clear user data function (but keep prize settings)
+        // Clear user data function
         window.clearUserData = function() {
             if (confirm('Are you sure you want to clear all user data and start over?')) {
                 localStorage.removeItem('wheelUser');
@@ -949,30 +1011,146 @@
                 location.reload();
             }
         };
+
+        // Password Functions
+        window.showPasswordPanel = function() {
+            document.getElementById('passwordPanel').style.display = 'flex';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+            document.getElementById('passwordInput').focus();
+        }
         
-        document.addEventListener('DOMContentLoaded', function() {
-            const wheel = document.getElementById('wheel');
-            const spinBtn = document.getElementById('spinBtn');
-            const prizeText = document.getElementById('prizeText');
-            const historyList = document.getElementById('historyList');
-            const adminPanel = document.getElementById('adminPanel');
-            const closeAdmin = document.getElementById('closeAdmin');
+        window.checkPassword = function() {
+            const enteredPassword = document.getElementById('passwordInput').value;
+            if (enteredPassword === ADMIN_PASSWORD) {
+                document.getElementById('passwordPanel').style.display = 'none';
+                openAdminPanel();
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+        
+        window.handlePasswordKeypress = function(event) {
+            if (event.key === 'Enter') {
+                checkPassword();
+            }
+        }
+
+        // Admin Panel Functions
+        function openAdminPanel() {
+            document.getElementById('adminPanel').style.display = 'flex';
+            renderPrizeControls();
+        }
+        
+        function closeAdminPanel() {
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+        
+        function renderPrizeControls() {
             const prizesContainer = document.getElementById('prizesContainer');
             const probabilityTotal = document.getElementById('probabilityTotal');
-            const addPrize = document.getElementById('addPrize');
-            const savePrizes = document.getElementById('savePrizes');
-            const resetPrizes = document.getElementById('resetPrizes');
-            const passwordPanel = document.getElementById('passwordPanel');
-            const passwordInput = document.getElementById('passwordInput');
-            const passwordError = document.getElementById('passwordError');
-            const registrationForm = document.getElementById('registrationForm');
-            const wheelGame = document.getElementById('wheelGame');
-            const userForm = document.getElementById('userForm');
-            const userInfo = document.getElementById('userInfo');
-            const userDetails = document.getElementById('userDetails');
             
+            prizesContainer.innerHTML = '';
+            let totalProbability = 0;
+            
+            prizes.forEach((prize, index) => {
+                totalProbability += prize.probability;
+                
+                const prizeItem = document.createElement('div');
+                prizeItem.className = 'prize-item';
+                
+                prizeItem.innerHTML = `
+                    <div class="prize-color" style="background-color: ${prize.color}"></div>
+                    <div class="prize-inputs">
+                        <input type="text" class="prize-name" value="${prize.name}" placeholder="Prize Name">
+                        <input type="number" class="prize-probability" value="${prize.probability}" min="1" max="100" placeholder="%">
+                        <input type="color" class="prize-color-input" value="${prize.color}">
+                    </div>
+                    <button class="remove-prize" data-index="${index}">×</button>
+                `;
+                
+                prizesContainer.appendChild(prizeItem);
+            });
+            
+            probabilityTotal.textContent = `Total Probability: ${totalProbability}%`;
+            probabilityTotal.style.color = totalProbability === 100 ? 'green' : 'red';
+            
+            document.querySelectorAll('.remove-prize').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    prizes.splice(index, 1);
+                    renderPrizeControls();
+                });
+            });
+            
+            document.querySelectorAll('.prize-name, .prize-probability, .prize-color-input').forEach(input => {
+                input.addEventListener('input', updatePrizeFromInputs);
+            });
+        }
+        
+        function updatePrizeFromInputs() {
+            const prizeItems = document.querySelectorAll('.prize-item');
+            let totalProbability = 0;
+            
+            prizeItems.forEach((item, index) => {
+                const name = item.querySelector('.prize-name').value;
+                const probability = parseInt(item.querySelector('.prize-probability').value) || 0;
+                const color = item.querySelector('.prize-color-input').value;
+                
+                prizes[index] = { name, probability, color };
+                totalProbability += probability;
+                
+                item.querySelector('.prize-color').style.backgroundColor = color;
+            });
+            
+            document.getElementById('probabilityTotal').textContent = `Total Probability: ${totalProbability}%`;
+            document.getElementById('probabilityTotal').style.color = totalProbability === 100 ? 'green' : 'red';
+        }
+        
+        function addNewPrize() {
+            prizes.push({
+                name: "New Prize",
+                probability: Math.floor(100 / (prizes.length + 1)),
+                color: "#" + Math.floor(Math.random()*16777215).toString(16)
+            });
+            renderPrizeControls();
+        }
+        
+        function savePrizeSettings() {
+            updatePrizeFromInputs();
+            const totalProbability = prizes.reduce((sum, p) => sum + p.probability, 0);
+            
+            if (totalProbability !== 100) {
+                alert(`Total probability must be 100%. Current total: ${totalProbability}%`);
+                return;
+            }
+            
+            localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+            savePrizesToFirebase();
+            createWheelSegments();
+        }
+        
+        function resetToDefault() {
+            if (confirm('Are you sure you want to reset to default prizes?')) {
+                prizes = [...defaultPrizes];
+                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                savePrizesToFirebase();
+                createWheelSegments();
+                closeAdminPanel();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
             // Load prizes when page starts
-            loadPrizes();
+            loadPrizes().then(() => {
+                checkExistingUser();
+            }).catch(error => {
+                console.error('Failed to load prizes:', error);
+                handleFirebaseError(error);
+                checkExistingUser();
+            });
             
             // Check if user is already registered
             function checkExistingUser() {
@@ -985,12 +1163,11 @@
             
             // Show wheel game after registration
             function showWheelGame() {
-                registrationForm.style.display = 'none';
-                wheelGame.style.display = 'block';
+                document.getElementById('registrationForm').style.display = 'none';
+                document.getElementById('wheelGame').style.display = 'block';
                 
-                // Display user info
                 if (currentUser) {
-                    userDetails.innerHTML = `
+                    document.getElementById('userDetails').innerHTML = `
                         <strong>Name:</strong> ${currentUser.name}<br>
                         <strong>Phone:</strong> ${currentUser.phone}<br>
                         <strong>Email:</strong> ${currentUser.email}
@@ -998,16 +1175,15 @@
                     `;
                 }
                 
-                // Initialize wheel with current prizes (admin settings)
                 createWheelSegments();
                 updateHistory();
             }
             
             // Handle form submission
-            userForm.addEventListener('submit', function(e) {
+            document.getElementById('userForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const formData = new FormData(userForm);
+                const formData = new FormData(this);
                 currentUser = {
                     name: formData.get('name'),
                     phone: formData.get('phone'),
@@ -1016,29 +1192,21 @@
                     registrationTime: new Date().toISOString()
                 };
                 
-                // Save user data to localStorage
                 localStorage.setItem('wheelUser', JSON.stringify(currentUser));
-                
-                // Show wheel game
                 showWheelGame();
-                
-                // Log user data (in real app, this would be sent to server)
                 console.log('User registered:', currentUser);
             });
             
-            // Initialize the wheel
-            function initializeWheel() {
-                checkExistingUser();
-            }
-            
-            // Create wheel segments with EQUAL sizes
+            // Create wheel segments
             function createWheelSegments() {
+                const wheel = document.getElementById('wheel');
+                if (!wheel) return;
+                
                 wheel.innerHTML = '';
                 
                 const numberOfSegments = prizes.length;
                 const segmentAngle = 360 / numberOfSegments;
                 
-                // Create a conic gradient with equal segments
                 const conicGradient = [];
                 prizes.forEach((prize, index) => {
                     const startAngle = index * segmentAngle;
@@ -1048,7 +1216,6 @@
                 
                 wheel.style.background = `conic-gradient(${conicGradient.join(', ')})`;
                 
-                // Add segment text containers
                 prizes.forEach((prize, index) => {
                     const segment = document.createElement('div');
                     segment.className = 'wheel-segment';
@@ -1065,20 +1232,19 @@
                 });
             }
             
-            // Spin the wheel - FIXED VERSION
+            // Spin the wheel
             function spinWheel() {
-                // Disable button during spin
+                const spinBtn = document.getElementById('spinBtn');
+                const wheel = document.getElementById('wheel');
+                const prizeText = document.getElementById('prizeText');
+                
                 spinBtn.disabled = true;
                 spinBtn.textContent = "Spinning...";
                 
-                // Reset wheel position
                 wheel.style.transition = 'none';
                 wheel.style.transform = 'rotate(0deg)';
-                
-                // Force reflow
                 void wheel.offsetWidth;
                 
-                // First, use probability to determine which prize should win
                 const randomValue = Math.random() * 100;
                 let cumulativeProbability = 0;
                 let selectedPrizeIndex = 0;
@@ -1091,35 +1257,22 @@
                     }
                 }
                 
-                // Now calculate the rotation to make that prize land at the pointer
                 const numberOfSegments = prizes.length;
                 const segmentAngle = 360 / numberOfSegments;
                 const fullRotations = 5;
-                
-                // Calculate the angle needed to make the selected prize land at the pointer
-                // The pointer is at top (0 degrees), so we need to rotate so that the selected segment is at the top
                 const selectedSegmentMiddle = selectedPrizeIndex * segmentAngle + (segmentAngle / 2);
-                
-                // We want the selected segment to end up at the pointer (top position)
-                // So we rotate the wheel so that the selected segment's middle aligns with the pointer
                 const finalRotation = fullRotations * 360 + (360 - selectedSegmentMiddle);
-                
-                // Add some random variation within the segment for natural feel
                 const randomVariation = (Math.random() - 0.5) * (segmentAngle * 0.8);
                 const finalRotationWithVariation = finalRotation + randomVariation;
                 
-                // Apply rotation with animation
                 wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
                 wheel.style.transform = `rotate(${finalRotationWithVariation}deg)`;
                 
-                // Show result after animation completes
                 setTimeout(function() {
-                    // The prize should be the one we selected based on probability
                     const actualPrize = prizes[selectedPrizeIndex];
                     prizeText.textContent = actualPrize.name;
                     prizeText.parentElement.classList.add('celebrate');
                     
-                    // Add to history with user info
                     spinCount++;
                     const historyItem = {
                         id: spinCount,
@@ -1133,32 +1286,22 @@
                     spinHistory.unshift(historyItem);
                     updateHistory();
                     
-                    // Log spin result with user data (in real app, this would be sent to server)
-                    console.log('Spin result:', {
-                        user: currentUser,
-                        prize: actualPrize.name,
-                        time: new Date().toISOString()
-                    });
-                    
-                    // Re-enable button
                     spinBtn.disabled = false;
                     spinBtn.textContent = "SPIN THE WHEEL";
                     
-                    // Remove celebration animation after it completes
                     setTimeout(() => {
                         prizeText.parentElement.classList.remove('celebrate');
                     }, 1500);
                     
-                    // Debug info
                     console.log('Selected prize:', actualPrize.name, 'Probability:', actualPrize.probability + '%');
                 }, 4000);
             }
             
             // Update spin history
             function updateHistory() {
+                const historyList = document.getElementById('historyList');
                 historyList.innerHTML = '';
                 
-                // Show only last 5 spins
                 const recentHistory = spinHistory.slice(0, 5);
                 
                 if (recentHistory.length === 0) {
@@ -1188,170 +1331,36 @@
                 });
             }
             
-            // Password Functions
-            window.showPasswordPanel = function() {
-                passwordPanel.style.display = 'flex';
-                passwordInput.value = '';
-                passwordError.style.display = 'none';
-                passwordInput.focus();
-            }
-            
-            window.checkPassword = function() {
-                const enteredPassword = passwordInput.value;
-                if (enteredPassword === ADMIN_PASSWORD) {
-                    passwordPanel.style.display = 'none';
-                    openAdminPanel();
-                } else {
-                    passwordError.style.display = 'block';
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
-            }
-            
-            window.handlePasswordKeypress = function(event) {
-                if (event.key === 'Enter') {
-                    checkPassword();
-                }
-            }
-            
-            // Admin Panel Functions
-            function openAdminPanel() {
-                adminPanel.style.display = 'flex';
-                renderPrizeControls();
-            }
-            
-            function closeAdminPanel() {
-                adminPanel.style.display = 'none';
-            }
-            
-            function renderPrizeControls() {
-                prizesContainer.innerHTML = '';
-                let totalProbability = 0;
-                
-                prizes.forEach((prize, index) => {
-                    totalProbability += prize.probability;
-                    
-                    const prizeItem = document.createElement('div');
-                    prizeItem.className = 'prize-item';
-                    
-                    prizeItem.innerHTML = `
-                        <div class="prize-color" style="background-color: ${prize.color}"></div>
-                        <div class="prize-inputs">
-                            <input type="text" class="prize-name" value="${prize.name}" placeholder="Prize Name">
-                            <input type="number" class="prize-probability" value="${prize.probability}" min="1" max="100" placeholder="%">
-                            <input type="color" class="prize-color-input" value="${prize.color}">
-                        </div>
-                        <button class="remove-prize" data-index="${index}">×</button>
-                    `;
-                    
-                    prizesContainer.appendChild(prizeItem);
-                });
-                
-                probabilityTotal.textContent = `Total Probability: ${totalProbability}%`;
-                probabilityTotal.style.color = totalProbability === 100 ? 'green' : 'red';
-                
-                // Add event listeners to remove buttons
-                document.querySelectorAll('.remove-prize').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const index = parseInt(this.getAttribute('data-index'));
-                        prizes.splice(index, 1);
-                        renderPrizeControls();
-                    });
-                });
-                
-                // Add event listeners to inputs for real-time updates
-                document.querySelectorAll('.prize-name, .prize-probability, .prize-color-input').forEach(input => {
-                    input.addEventListener('input', updatePrizeFromInputs);
-                });
-            }
-            
-            function updatePrizeFromInputs() {
-                const prizeItems = document.querySelectorAll('.prize-item');
-                let totalProbability = 0;
-                
-                prizeItems.forEach((item, index) => {
-                    const name = item.querySelector('.prize-name').value;
-                    const probability = parseInt(item.querySelector('.prize-probability').value) || 0;
-                    const color = item.querySelector('.prize-color-input').value;
-                    
-                    prizes[index] = { name, probability, color };
-                    totalProbability += probability;
-                    
-                    // Update color preview
-                    item.querySelector('.prize-color').style.backgroundColor = color;
-                });
-                
-                probabilityTotal.textContent = `Total Probability: ${totalProbability}%`;
-                probabilityTotal.style.color = totalProbability === 100 ? 'green' : 'red';
-            }
-            
-            function addNewPrize() {
-                prizes.push({
-                    name: "New Prize",
-                    probability: Math.floor(100 / (prizes.length + 1)),
-                    color: "#" + Math.floor(Math.random()*16777215).toString(16)
-                });
-                renderPrizeControls();
-            }
-            
-            function savePrizeSettings() {
-                updatePrizeFromInputs();
-                const totalProbability = prizes.reduce((sum, p) => sum + p.probability, 0);
-                
-                if (totalProbability !== 100) {
-                    alert(`Total probability must be 100%. Current total: ${totalProbability}%`);
-                    return;
-                }
-                
-                localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                savePrizesToCloud(); // Save to cloud for all devices
-                createWheelSegments(); // Update the wheel with new prizes
-            }
-            
-            function resetToDefault() {
-                if (confirm('Are you sure you want to reset to default prizes?')) {
-                    prizes = [...defaultPrizes];
-                    localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
-                    savePrizesToCloud(); // Save to cloud for all devices
-                    createWheelSegments(); // Update the wheel with default prizes
-                    closeAdminPanel();
-                }
-            }
-            
             // Event Listeners
-            spinBtn.addEventListener('click', spinWheel);
-            closeAdmin.addEventListener('click', closeAdminPanel);
-            addPrize.addEventListener('click', addNewPrize);
-            savePrizes.addEventListener('click', savePrizeSettings);
-            resetPrizes.addEventListener('click', resetToDefault);
+            document.getElementById('spinBtn').addEventListener('click', spinWheel);
+            document.getElementById('closeAdmin').addEventListener('click', closeAdminPanel);
+            document.getElementById('addPrize').addEventListener('click', addNewPrize);
+            document.getElementById('savePrizes').addEventListener('click', savePrizeSettings);
+            document.getElementById('resetPrizes').addEventListener('click', resetToDefault);
             
-            // Keyboard support (Space key to spin)
+            // Keyboard support
             document.addEventListener('keydown', function(event) {
-                if (event.code === 'Space' && !spinBtn.disabled) {
+                if (event.code === 'Space' && document.getElementById('spinBtn') && !document.getElementById('spinBtn').disabled) {
                     event.preventDefault();
                     spinWheel();
                 }
             });
             
-            // Close admin panel when clicking outside
-            adminPanel.addEventListener('click', function(event) {
-                if (event.target === adminPanel) {
+            // Close panels when clicking outside
+            document.getElementById('adminPanel').addEventListener('click', function(event) {
+                if (event.target === this) {
                     closeAdminPanel();
                 }
             });
             
-            // Close password panel when clicking outside
-            passwordPanel.addEventListener('click', function(event) {
-                if (event.target === passwordPanel) {
-                    passwordPanel.style.display = 'none';
-                    passwordError.style.display = 'none';
-                    passwordInput.value = '';
-                    passwordInput.blur();
+            document.getElementById('passwordPanel').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    this.style.display = 'none';
+                    document.getElementById('passwordError').style.display = 'none';
+                    document.getElementById('passwordInput').value = '';
+                    document.getElementById('passwordInput').blur();
                 }
             });
-            
-            // Initialize the application
-            initializeWheel();
         });
     </script>
 </body>
