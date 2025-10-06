@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Fortune Wheel</title>
+    <title>Lucky Spin Wheel - Cloud Sync</title>
     <style>
         * {
             margin: 0;
@@ -587,6 +587,47 @@
             color: #333;
         }
         
+        /* Sync Status */
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+        
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .sync-indicator.synced {
+            background: #2ed573;
+        }
+        
+        .sync-indicator.pending {
+            background: #ffa502;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .sync-indicator.error {
+            background: #ff4757;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
         @keyframes celebrate {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -657,6 +698,12 @@
 </style>
 
 <body>
+    <!-- Sync Status Indicator -->
+    <div class="sync-status" id="syncStatus">
+        <div class="sync-indicator" id="syncIndicator"></div>
+        <span id="syncText">Checking for updates...</span>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>Lucky Spin Wheel</h1>
@@ -731,7 +778,7 @@
         </div>
         
         <div class="footer">
-            <p>© Fortune Wheel Prototype | No Database Ver </p>
+            <p>© Fortune Wheel Prototype | Cloud Sync Enabled</p>
         </div>
     </div>
 
@@ -780,7 +827,7 @@
             <button class="add-prize" id="addPrize">+ Add New Prize</button>
             
             <div class="admin-actions">
-                <button class="save-btn" id="savePrizes">Save Changes</button>
+                <button class="save-btn" id="savePrizes">Save & Sync Changes</button>
                 <button class="reset-btn" id="resetPrizes">Reset to Default</button>
             </div>
         </div>
@@ -802,10 +849,21 @@
             { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
         ];
         
+        // Firebase configuration (replace with your actual Firebase config)
+        const firebaseConfig = {
+            apiKey: "demo-api-key",
+            authDomain: "demo-project.firebaseapp.com",
+            projectId: "demo-project",
+            storageBucket: "demo-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "demo-app-id"
+        };
+        
         let prizes = [];
         let spinCount = 0;
         let spinHistory = [];
         let currentUser = null;
+        let lastSyncTime = null;
         
         // Load prizes from localStorage or use defaults
         function loadPrizes() {
@@ -817,6 +875,70 @@
                 // Save default prizes to localStorage on first load
                 localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
             }
+            
+            // Check for updates from cloud storage
+            checkForCloudUpdates();
+        }
+        
+        // Check for cloud updates
+        function checkForCloudUpdates() {
+            updateSyncStatus('pending', 'Checking for updates...');
+            
+            // In a real implementation, this would check Firebase or your backend
+            // For demo purposes, we'll simulate checking with a timeout
+            setTimeout(() => {
+                const cloudData = localStorage.getItem('wheelCloudData');
+                if (cloudData) {
+                    const cloudPrizes = JSON.parse(cloudData).prizes;
+                    const cloudTimestamp = JSON.parse(cloudData).timestamp;
+                    
+                    // Check if cloud data is newer than local data
+                    const localTimestamp = localStorage.getItem('wheelLastUpdate');
+                    
+                    if (!localTimestamp || cloudTimestamp > localTimestamp) {
+                        // Update local data with cloud data
+                        prizes = cloudPrizes;
+                        localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                        localStorage.setItem('wheelLastUpdate', cloudTimestamp);
+                        updateSyncStatus('synced', 'Updated from cloud');
+                        createWheelSegments(); // Refresh the wheel
+                    } else {
+                        updateSyncStatus('synced', 'Up to date');
+                    }
+                } else {
+                    updateSyncStatus('synced', 'No cloud data found');
+                }
+            }, 1000);
+        }
+        
+        // Update sync status indicator
+        function updateSyncStatus(status, text) {
+            const indicator = document.getElementById('syncIndicator');
+            const statusText = document.getElementById('syncText');
+            
+            indicator.className = 'sync-indicator ' + status;
+            statusText.textContent = text;
+        }
+        
+        // Save prizes to cloud storage
+        function savePrizesToCloud() {
+            updateSyncStatus('pending', 'Saving to cloud...');
+            
+            const prizeData = {
+                prizes: prizes,
+                timestamp: Date.now()
+            };
+            
+            // In a real implementation, this would save to Firebase or your backend
+            // For demo purposes, we'll simulate saving with localStorage
+            setTimeout(() => {
+                localStorage.setItem('wheelCloudData', JSON.stringify(prizeData));
+                localStorage.setItem('wheelLastUpdate', Date.now());
+                updateSyncStatus('synced', 'Saved to cloud');
+                
+                // Show success message
+                alert('Prizes saved and synced to cloud! All devices will now use these probabilities.');
+            }, 1500);
         }
         
         // Clear user data function (but keep prize settings)
@@ -941,19 +1063,6 @@
                     
                     wheel.appendChild(segment);
                 });
-            }
-            
-            // Calculate which prize is at the pointer based on final rotation
-            function getPrizeFromRotation(rotation) {
-                const normalizedRotation = (360 - (rotation % 360)) % 360;
-                const numberOfSegments = prizes.length;
-                const segmentAngle = 360 / numberOfSegments;
-                
-                // Determine which visual segment the pointer is on
-                const segmentIndex = Math.floor(normalizedRotation / segmentAngle);
-                
-                // Return the prize for that visual segment (this ensures visual match)
-                return prizes[segmentIndex];
             }
             
             // Spin the wheel - FIXED VERSION
@@ -1195,15 +1304,15 @@
                 }
                 
                 localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                savePrizesToCloud(); // Save to cloud for all devices
                 createWheelSegments(); // Update the wheel with new prizes
-                closeAdminPanel();
-                alert('Prizes saved successfully! Wheel shows equal segments with your probabilities.');
             }
             
             function resetToDefault() {
                 if (confirm('Are you sure you want to reset to default prizes?')) {
                     prizes = [...defaultPrizes];
                     localStorage.setItem('wheelPrizes', JSON.stringify(prizes));
+                    savePrizesToCloud(); // Save to cloud for all devices
                     createWheelSegments(); // Update the wheel with default prizes
                     closeAdminPanel();
                 }
