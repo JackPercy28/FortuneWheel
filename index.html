@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Spin Wheel - Complete Admin</title>
+    <title>Lucky Spin</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -497,6 +497,111 @@
             }
         }
 
+        /* Live Winners Styles */
+        .winner-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            border-left: 5px solid #ff7e5f;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .winner-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .winner-item.new {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff0cc 100%);
+            border-left-color: #ffa502;
+            animation: highlight 2s ease-in-out;
+        }
+
+        .winner-prize-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+            padding: 5px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .winner-details {
+            flex: 1;
+        }
+
+        .winner-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .winner-prize {
+            color: #ff7e5f;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .winner-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .winner-time {
+            background: #e3f2fd;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .winner-company {
+            background: #e8f5e8;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes highlight {
+            0% { background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%); }
+            50% { background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%); }
+            100% { background: linear-gradient(135deg, #fff9e6 0%, #fff0cc 100%); }
+        }
+
+        /* Empty state */
+        .empty-winners {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-winners i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
         /* For larger screens, use horizontal layout */
         @media (min-width: 768px) {
             .prize-item {
@@ -874,6 +979,15 @@
             }
         }
 
+        .admin-tab-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 480px) {
             .admin-content {
                 padding: 10px;
@@ -901,7 +1015,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Lucky Spin Wheel</h1>
+            <h1>Lucky Spin</h1>
             <p>Spin to win amazing prizes!</p>
         </div>
         
@@ -1016,6 +1130,7 @@
                 <button class="admin-tab active" onclick="switchAdminTab('prizes')">🎯 Prize Management</button>
                 <button class="admin-tab" onclick="switchAdminTab('export')">📊 Data Export</button>
                 <button class="admin-tab" onclick="switchAdminTab('analytics')">📈 Analytics</button>
+                <button class="admin-tab" onclick="switchAdminTab('winners')">🏆 Live Winners</button>
                 <button class="admin-tab" onclick="switchAdminTab('settings')">⚙️ Settings</button>
             </div>
             
@@ -1117,6 +1232,49 @@
                 </div>
             </div>
             
+            <!-- Live Winners Tab -->
+            <div id="winners-tab" class="admin-tab-content">
+                <h3>🏆 Live Winners Dashboard</h3>
+                
+                <div class="export-section">
+                    <h4>🎯 Recent Winners</h4>
+                    <p>Live updates of all winning spins</p>
+                    
+                    <!-- Controls -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <button class="export-btn" onclick="refreshWinners()" style="background: #17a2b8;">
+                            🔄 Refresh
+                        </button>
+                        <button class="export-btn" onclick="clearWinnersDisplay()" style="background: #6c757d;">
+                            🗑️ Clear Display
+                        </button>
+                        <button class="export-btn" onclick="exportWinnersToExcel()" style="background: #2ed573;">
+                            📊 Export Winners
+                        </button>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="status-bar">
+                        <strong>Live Statistics:</strong><br>
+                        🏆 Total Winners: <span id="totalWinners">0</span><br>
+                        📈 Wins Today: <span id="winsToday">0</span><br>
+                        🔥 Recent Activity: <span id="recentActivity">0</span> wins in last hour
+                    </div>
+                    
+                    <!-- Winners List -->
+                    <div id="winnersList" style="margin-top: 20px; max-height: 400px; overflow-y: auto;">
+                        <!-- Winners will be populated here -->
+                    </div>
+                    
+                    <!-- Auto-refresh toggle -->
+                    <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <label style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                            <span>🔄 Auto-refresh every 30 seconds</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
             <!-- Settings Tab -->
             <div id="settings-tab" class="admin-tab-content">
                 <h3>System Settings</h3>
@@ -1140,6 +1298,7 @@
                         Warning: This will delete all users and spins data.
                     </p>
                 </div>
+                
             </div>
         </div>
     </div>
@@ -1883,6 +2042,191 @@
             }, 4000);
         }
 
+        // ==================== LIVE WINNERS FUNCTIONS ====================
+        let autoRefreshInterval = null;
+        let lastRefreshTime = null;
+
+        function refreshWinners() {
+            updateWinnersDisplay();
+            lastRefreshTime = new Date();
+            document.getElementById('recentActivity').textContent = getRecentWinsCount();
+        }
+
+        function clearWinnersDisplay() {
+            if (confirm('Clear the winners display? This won\'t delete data, just clear the view.')) {
+                const winnersList = document.getElementById('winnersList');
+                winnersList.innerHTML = '<div class="empty-winners">🎯 No winners to display yet</div>';
+                updateWinnersStats();
+            }
+        }
+
+        function toggleAutoRefresh() {
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            
+            if (autoRefreshCheckbox.checked) {
+                autoRefreshInterval = setInterval(refreshWinners, 30000); // 30 seconds
+                console.log('Auto-refresh enabled');
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                console.log('Auto-refresh disabled');
+            }
+        }
+
+        function updateWinnersDisplay() {
+            const winnersList = document.getElementById('winnersList');
+            
+            if (spins.length === 0) {
+                winnersList.innerHTML = '<div class="empty-winners">🎯 No winners to display yet</div>';
+                return;
+            }
+            
+            // Sort spins by timestamp (newest first)
+            const sortedSpins = [...spins].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            let html = '';
+            let count = 0;
+            
+            sortedSpins.forEach((spin, index) => {
+                if (count >= 50) return; // Limit to 50 most recent
+                
+                const spinTime = new Date(spin.timestamp);
+                const timeAgo = getTimeAgo(spinTime);
+                const isNew = lastRefreshTime && spinTime > lastRefreshTime;
+                
+                html += `
+                    <div class="winner-item ${isNew ? 'new' : ''}">
+                        <div class="winner-prize-icon">
+                            ${spin.prizeImage ? 
+                                `<img src="${spin.prizeImage}" alt="${spin.prize}" style="width: 100%; height: 100%; object-fit: contain;">` :
+                                '🎁'
+                            }
+                        </div>
+                        <div class="winner-details">
+                            <div class="winner-name">${spin.userName}</div>
+                            <div class="winner-prize">${spin.prize}</div>
+                            <div class="winner-meta">
+                                <span class="winner-time">${timeAgo}</span>
+                                ${spin.userCompany && spin.userCompany !== 'N/A' ? 
+                                    `<span class="winner-company">${spin.userCompany}</span>` : ''
+                                }
+                                <span>📧 ${spin.userEmail}</span>
+                                ${spin.userPhone && spin.userPhone !== 'N/A' ? 
+                                    `<span>📞 ${spin.userPhone}</span>` : ''
+                                }
+                            </div>
+                        </div>
+                        ${isNew ? '<div style="color: #ffa502; font-weight: bold;">NEW!</div>' : ''}
+                    </div>
+                `;
+                count++;
+            });
+            
+            winnersList.innerHTML = html;
+            updateWinnersStats();
+        }
+
+        function updateWinnersStats() {
+            // Total winners
+            document.getElementById('totalWinners').textContent = spins.length;
+            
+            // Wins today
+            const today = new Date().toDateString();
+            const winsToday = spins.filter(spin => new Date(spin.timestamp).toDateString() === today).length;
+            document.getElementById('winsToday').textContent = winsToday;
+            
+            // Recent activity (last hour)
+            document.getElementById('recentActivity').textContent = getRecentWinsCount();
+        }
+
+        function getRecentWinsCount() {
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            return spins.filter(spin => new Date(spin.timestamp) > oneHourAgo).length;
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        }
+
+        function exportWinnersToExcel() {
+            if (spins.length === 0) {
+                alert('No winner data available to export.');
+                return;
+            }
+
+            const winnersData = spins.map(spin => ({
+                'Winner Name': spin.userName,
+                'Prize': spin.prize,
+                'Email': spin.userEmail,
+                'Phone': spin.userPhone,
+                'Company': spin.userCompany,
+                'Date': spin.date,
+                'Time': spin.time,
+                'Timestamp': spin.timestamp
+            }));
+
+            try {
+                const worksheet = XLSX.utils.json_to_sheet(winnersData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Winners');
+                XLSX.writeFile(workbook, `wheel_winners_${new Date().toISOString().split('T')[0]}.xlsx`);
+                alert(`Successfully exported ${spins.length} winners to Excel!`);
+            } catch (error) {
+                alert('Error exporting winners to Excel: ' + error.message);
+            }
+        }
+
+        // Update the switchAdminTab function
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabName === 'analytics') {
+                updateAnalytics();
+            } else if (tabName === 'winners') {
+                refreshWinners();
+            }
+        }
+
+        // Update the saveSpin functions to refresh winners display
+       async function saveSpinToFirebase(prize, user) {
+            try {
+                if (firebaseInitialized) {
+                    const spinData = {
+                        prize: prize.name,
+                        prizeImage: prize.image,
+                        userEmail: user ? user.email : 'Guest',
+                        userName: user ? user.name : 'Guest',
+                        userPhone: user ? user.phone : 'N/A',
+                        userCompany: user ? user.company : 'N/A',
+                        timestamp: new Date().toISOString(),
+                        date: new Date().toLocaleDateString(),
+                        time: new Date().toLocaleTimeString()
+                    };
+                    
+                    await db.collection('spins').add(spinData);
+                }
+            } catch (error) {
+                console.error('Error saving spin to Firebase:', error);
+            }
+            
+            saveSpinToLocalStorage(prize, user);
+            // Refresh winners display if it's visible
+            if (document.getElementById('winners-tab').classList.contains('active')) {
+                refreshWinners();
+            }
+        }
+
         // ==================== USER SWITCHING FUNCTIONS ====================
         function switchUser() {
             if (confirm('Are you sure you want to register a new user? Current user data will be cleared.')) {
@@ -1950,6 +2294,9 @@
             
             // Initialize image upload functionality
             initializeImageUpload();
+            
+            // Ensure only the prizes tab is active initially
+            switchAdminTab('prizes');
         }
 
         function hideAdminPanel() {
