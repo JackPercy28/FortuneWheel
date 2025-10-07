@@ -117,19 +117,28 @@
             overflow: hidden;
         }
         
-        .segment-text {
+    
+        
+      .segment-image {
             position: absolute;
-            left: 20px;
-            top: 10%;
-            transform: translateY(-50%) rotate(90deg);
-            transform-origin: left center;
+            left: 35%;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(80deg);
+            transform-origin: center center;
             text-align: center;
-            width: 120px;
-            font-size: 11px;
-            font-weight: bold;
-            color: rgb(255, 255, 255);
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-            line-height: 1.2;
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .segment-image img {
+            width: 50px;  /* Smaller size */
+            height: 50px; /* Smaller size */
+            object-fit: contain;
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
         }
         
         .wheel-center {
@@ -202,6 +211,16 @@
             font-size: 1.5rem;
             font-weight: bold;
             color: #ff7e5f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .prize-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
         }
         
         .user-info {
@@ -518,6 +537,99 @@
             transform: translateY(-2px);
             opacity: 0.9;
         }
+
+        /* Image Upload Styles */
+        .upload-preview {
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #ddd;
+        }
+
+        .uploaded-image-item {
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .uploaded-image-item:hover {
+            border-color: #ff7e5f;
+            transform: scale(1.05);
+        }
+
+        .uploaded-image-item.selected {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .uploaded-image-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+
+        .delete-uploaded-image {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .uploaded-image-item:hover .delete-uploaded-image {
+            display: block;
+        }
+
+        .image-url-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .image-url-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .prize-image-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .preview-small {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .prize-image-input {
+            flex: 1;
+            max-width: 200px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 
@@ -648,6 +760,33 @@
                     ⓘ Wheel shows equal segments, but prizes have different probabilities
                 </div>
                 
+                <!-- ADD IMAGE UPLOAD SECTION HERE -->
+                <div class="export-section" style="margin-bottom: 20px;">
+                    <h4>📁 Image Upload</h4>
+                    <p>Upload images for prizes (recommended: 80x80px PNG with transparent background)</p>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        <button class="export-btn" onclick="document.getElementById('imageUpload').click()" style="background: #17a2b8; flex: 1;">
+                            📸 Choose Image
+                        </button>
+                        <button class="export-btn" onclick="clearImageUpload()" style="background: #6c757d; flex: 0.5;">
+                            🗑️ Clear
+                        </button>
+                    </div>
+                    <div id="uploadPreview" style="margin-top: 15px; text-align: center; display: none;">
+                        <img id="previewImage" style="max-width: 80px; max-height: 80px; border: 2px solid #ddd; border-radius: 8px; padding: 5px;">
+                        <div style="margin-top: 10px;">
+                            <button class="export-btn" onclick="useUploadedImage()" style="background: #28a745; padding: 8px 15px;">
+                                ✅ Use for Selected Prize
+                            </button>
+                        </div>
+                    </div>
+                    <div id="uploadedImagesGallery" style="margin-top: 20px; display: none;">
+                        <h5>Recently Uploaded Images</h5>
+                        <div id="uploadedImagesList" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;"></div>
+                    </div>
+                </div>
+                
                 <div id="prizesContainer">
                     <!-- Prize items will be generated here -->
                 </div>
@@ -757,22 +896,27 @@
         let firebaseInitialized = false;
         const ADMIN_PASSWORD = "admin123";
         
-        // Default prizes
+        // Default prizes with image support
         const defaultPrizes = [
-            { name: "Discount 10%", probability: 20, color: "#FF6384" },
-            { name: "Free Coffee", probability: 15, color: "#36A2EB" },
-            { name: "Movie Tickets", probability: 15, color: "#FFCE56" },
-            { name: "Gift Card $25", probability: 10, color: "#4BC0C0" },
-            { name: "Try Again", probability: 25, color: "#9966FF" },
-            { name: "Smartphone", probability: 5, color: "#FF9F40" },
-            { name: "Headphones", probability: 5, color: "#FF6384" },
-            { name: "Amazon Voucher", probability: 5, color: "#C9CBCF" }
+            { name: "Discount 10%", probability: 20, color: "#FF6384", image: "" },
+            { name: "Free Coffee", probability: 15, color: "#36A2EB", image: "" },
+            { name: "Movie Tickets", probability: 15, color: "#FFCE56", image: "" },
+            { name: "Gift Card $25", probability: 10, color: "#4BC0C0", image: "" },
+            { name: "Try Again", probability: 25, color: "#9966FF", image: "" },
+            { name: "Smartphone", probability: 5, color: "#FF9F40", image: "" },
+            { name: "Headphones", probability: 5, color: "#FF6384", image: "" },
+            { name: "Amazon Voucher", probability: 5, color: "#C9CBCF", image: "" }
         ];
 
         let prizes = [];
         let currentUser = null;
         let users = [];
         let spins = [];
+
+        // ==================== IMAGE UPLOAD VARIABLES ====================
+        let uploadedImages = JSON.parse(localStorage.getItem('uploadedImages') || '[]');
+        let currentlyUploadedImage = null;
+        let selectedPrizeIndex = null;
 
         async function initializeFirebase() {
             try {
@@ -852,10 +996,21 @@
                 prizeItem.className = 'prize-item';
                 prizeItem.innerHTML = `
                     <div class="prize-color" style="background-color: ${prize.color}"></div>
+                    <img src="${prize.image || 'https://cdn-icons-png.flaticon.com/512/1178/1178479.png'}" 
+                         class="preview-small" 
+                         alt="Preview" 
+                         style="${prize.image ? '' : 'display: none;'}"
+                         onerror="this.style.display='none'">
                     <div class="prize-inputs">
                         <input type="text" class="prize-name" value="${prize.name}" placeholder="Prize Name">
                         <input type="number" class="prize-probability" value="${prize.probability}" min="1" max="100" placeholder="%">
                         <input type="color" class="prize-color-input" value="${prize.color}">
+                        <div class="prize-image-input-container">
+                            <input type="url" class="prize-image-input" value="${prize.image || ''}" placeholder="Image URL or upload above">
+                            <button type="button" class="export-btn" onclick="selectPrizeForUpload(${index})" style="padding: 8px; background: #17a2b8; white-space: nowrap;">
+                                📷
+                            </button>
+                        </div>
                     </div>
                     <button class="remove-prize" onclick="removePrize(${index})">×</button>
                 `;
@@ -866,7 +1021,7 @@
             document.getElementById('probabilityTotal').style.color = totalProbability === 100 ? 'green' : 'red';
             
             // Add event listeners
-            container.querySelectorAll('.prize-name, .prize-probability, .prize-color-input').forEach(input => {
+            container.querySelectorAll('.prize-name, .prize-probability, .prize-color-input, .prize-image-input').forEach(input => {
                 input.addEventListener('input', updatePrizeFromInputs);
             });
         }
@@ -879,11 +1034,21 @@
                 const name = item.querySelector('.prize-name').value;
                 const probability = parseInt(item.querySelector('.prize-probability').value) || 0;
                 const color = item.querySelector('.prize-color-input').value;
+                const image = item.querySelector('.prize-image-input').value;
                 
-                prizes[index] = { name, probability, color };
+                prizes[index] = { name, probability, color, image };
                 totalProbability += probability;
                 
                 item.querySelector('.prize-color').style.backgroundColor = color;
+                
+                // Update image preview
+                const preview = item.querySelector('.preview-small');
+                if (preview && image) {
+                    preview.src = image;
+                    preview.style.display = 'block';
+                } else if (preview) {
+                    preview.style.display = 'none';
+                }
             });
             
             document.getElementById('probabilityTotal').textContent = `Total Probability: ${totalProbability}%`;
@@ -894,7 +1059,8 @@
             prizes.push({
                 name: "New Prize",
                 probability: 10,
-                color: "#" + Math.floor(Math.random()*16777215).toString(16)
+                color: "#" + Math.floor(Math.random()*16777215).toString(16),
+                image: ""
             });
             renderPrizeControls();
         }
@@ -929,41 +1095,51 @@
 
         // ==================== WHEEL DISPLAY FUNCTIONS ====================
         function createWheelSegments() {
-            const wheel = document.getElementById('wheel');
-            wheel.innerHTML = '';
+        const wheel = document.getElementById('wheel');
+        wheel.innerHTML = '';
+        
+        const numberOfSegments = prizes.length;
+        const segmentAngle = 360 / numberOfSegments;
+        
+        // Create conic gradient for the wheel background
+        const conicGradient = [];
+        prizes.forEach((prize, index) => {
+            const startAngle = index * segmentAngle;
+            const endAngle = (index + 1) * segmentAngle;
+            conicGradient.push(`${prize.color} ${startAngle}deg ${endAngle}deg`);
+        });
+        
+        wheel.style.background = `conic-gradient(${conicGradient.join(', ')})`;
+        
+        // Create individual segments with ONLY ICONS (no text at all)
+        prizes.forEach((prize, index) => {
+            const segment = document.createElement('div');
+            segment.className = 'wheel-segment';
             
-            const numberOfSegments = prizes.length;
-            const segmentAngle = 360 / numberOfSegments;
+            const angle = index * segmentAngle;
+            segment.style.transform = `rotate(${angle}deg)`;
             
-            // Create conic gradient for the wheel background
-            const conicGradient = [];
-            prizes.forEach((prize, index) => {
-                const startAngle = index * segmentAngle;
-                const endAngle = (index + 1) * segmentAngle;
-                conicGradient.push(`${prize.color} ${startAngle}deg ${endAngle}deg`);
-            });
+            // Create image container - ONLY SHOW ICONS, NO TEXT
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'segment-image';
             
-            wheel.style.background = `conic-gradient(${conicGradient.join(', ')})`;
+            // Use prize image or show nothing (empty segment)
+            if (prize.image) {
+                imageContainer.innerHTML = `
+                    <img src="${prize.image}" alt="${prize.name}" 
+                        onerror="this.style.display='none'">
+                `;
+            } else {
+                // If no image, show empty segment (no text)
+                imageContainer.innerHTML = '';
+            }
             
-            // Create individual segments with text labels
-            prizes.forEach((prize, index) => {
-                const segment = document.createElement('div');
-                segment.className = 'wheel-segment';
-                
-                const angle = index * segmentAngle;
-                segment.style.transform = `rotate(${angle}deg)`;
-                
-                const text = document.createElement('div');
-                text.className = 'segment-text';
-                text.textContent = prize.name;
-                text.style.color = getContrastColor(prize.color); // Ensure text is readable
-                
-                segment.appendChild(text);
-                wheel.appendChild(segment);
-            });
-            
-            console.log('Wheel created with', prizes.length, 'segments');
-        }
+            segment.appendChild(imageContainer);
+            wheel.appendChild(segment);
+        });
+        
+        console.log('Wheel created with', prizes.length, 'segments (icons only, no text)');
+    }
 
         // Helper function to ensure text is readable on any background
         function getContrastColor(hexcolor) {
@@ -974,40 +1150,220 @@
             return brightness > 128 ? 'black' : 'white';
         }
 
-        // ==================== DATA MANAGEMENT ====================
-        async function loadDataFromFirebase() {
-    try {
-        // Check if we have a "dataCleared" flag in localStorage
-        const dataCleared = localStorage.getItem('dataCleared');
-        if (dataCleared) {
-            console.log('Data was recently cleared, skipping Firebase load');
-            localStorage.removeItem('dataCleared'); // Remove the flag
-            loadDataFromLocalStorage();
-            return;
+        // ==================== IMAGE UPLOAD FUNCTIONALITY ====================
+        function initializeImageUpload() {
+            const imageUpload = document.getElementById('imageUpload');
+            if (imageUpload) {
+                imageUpload.addEventListener('change', handleImageUpload);
+            }
+            loadUploadedImagesGallery();
         }
 
-        // Load users
-        const usersSnapshot = await db.collection('users').get();
-        users = [];
-        usersSnapshot.forEach(doc => {
-            users.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Load spins
-        const spinsSnapshot = await db.collection('spins').get();
-        spins = [];
-        spinsSnapshot.forEach(doc => {
-            spins.push({ id: doc.id, ...doc.data() });
-        });
-        
-        updateCounts();
-        updateAnalytics();
-        
-    } catch (error) {
-        console.error('Error loading from Firebase:', error);
-        loadDataFromLocalStorage();
-    }
-}
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file (JPEG, PNG, GIF, etc.)');
+                return;
+            }
+
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image size should be less than 2MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentlyUploadedImage = e.target.result;
+                
+                // Show preview
+                const preview = document.getElementById('previewImage');
+                const uploadPreview = document.getElementById('uploadPreview');
+                
+                preview.src = currentlyUploadedImage;
+                uploadPreview.style.display = 'block';
+                
+                // Scroll to preview
+                uploadPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImageUpload() {
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('uploadPreview').style.display = 'none';
+            currentlyUploadedImage = null;
+        }
+
+        function useUploadedImage() {
+            if (!currentlyUploadedImage) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            // If a prize is selected in the form, use it
+            const activeInput = document.querySelector('.prize-image-input:focus');
+            if (activeInput) {
+                const index = Array.from(document.querySelectorAll('.prize-image-input')).indexOf(activeInput);
+                if (index !== -1) {
+                    setImageForPrize(index, currentlyUploadedImage);
+                    return;
+                }
+            }
+
+            // Otherwise, ask which prize to apply to
+            const prizeNames = prizes.map((prize, index) => `${index + 1}. ${prize.name}`).join('\n');
+            const prizeNumber = prompt(`Which prize would you like to assign this image to?\n\n${prizeNames}\n\nEnter the number (1-${prizes.length}):`);
+            
+            const index = parseInt(prizeNumber) - 1;
+            if (index >= 0 && index < prizes.length) {
+                setImageForPrize(index, currentlyUploadedImage);
+            } else {
+                alert('Invalid prize number selected');
+            }
+        }
+
+        function setImageForPrize(index, imageData) {
+            prizes[index].image = imageData;
+            
+            // Update the input field
+            const imageInputs = document.querySelectorAll('.prize-image-input');
+            if (imageInputs[index]) {
+                imageInputs[index].value = imageData;
+            }
+            
+            // Update preview
+            const previews = document.querySelectorAll('.preview-small');
+            if (previews[index]) {
+                previews[index].src = imageData;
+                previews[index].style.display = 'block';
+            }
+            
+            // Save to uploaded images gallery
+            saveToUploadedImages(imageData);
+            
+            // Clear upload
+            clearImageUpload();
+            
+            alert(`Image assigned to "${prizes[index].name}" successfully!`);
+        }
+
+        function saveToUploadedImages(imageData) {
+            // Check if image already exists
+            if (!uploadedImages.includes(imageData)) {
+                uploadedImages.unshift(imageData); // Add to beginning
+                // Keep only last 20 images
+                if (uploadedImages.length > 20) {
+                    uploadedImages = uploadedImages.slice(0, 20);
+                }
+                localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+                loadUploadedImagesGallery();
+            }
+        }
+
+        function loadUploadedImagesGallery() {
+            const gallery = document.getElementById('uploadedImagesGallery');
+            const list = document.getElementById('uploadedImagesList');
+            
+            if (uploadedImages.length === 0) {
+                gallery.style.display = 'none';
+                return;
+            }
+            
+            gallery.style.display = 'block';
+            list.innerHTML = '';
+            
+            uploadedImages.forEach((imageData, index) => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'uploaded-image-item';
+                imageItem.innerHTML = `
+                    <img src="${imageData}" alt="Uploaded image ${index + 1}" onclick="selectUploadedImage(this)">
+                    <button class="delete-uploaded-image" onclick="deleteUploadedImage(${index})">×</button>
+                `;
+                list.appendChild(imageItem);
+            });
+        }
+
+        function selectUploadedImage(imgElement) {
+            currentlyUploadedImage = imgElement.src;
+            
+            // Show preview
+            const preview = document.getElementById('previewImage');
+            const uploadPreview = document.getElementById('uploadPreview');
+            
+            preview.src = currentlyUploadedImage;
+            uploadPreview.style.display = 'block';
+            
+            // Highlight selected image
+            document.querySelectorAll('.uploaded-image-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            imgElement.parentElement.classList.add('selected');
+        }
+
+        function deleteUploadedImage(index) {
+            if (confirm('Are you sure you want to delete this image from your gallery?')) {
+                uploadedImages.splice(index, 1);
+                localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+                loadUploadedImagesGallery();
+                
+                // Also remove this image from any prizes using it
+                const deletedImage = uploadedImages[index];
+                prizes.forEach((prize, prizeIndex) => {
+                    if (prize.image === deletedImage) {
+                        prize.image = '';
+                        // Clear the input field if it exists
+                        const imageInputs = document.querySelectorAll('.prize-image-input');
+                        if (imageInputs[prizeIndex]) {
+                            imageInputs[prizeIndex].value = '';
+                        }
+                    }
+                });
+            }
+        }
+
+        function selectPrizeForUpload(index) {
+            selectedPrizeIndex = index;
+            document.getElementById('imageUpload').click();
+        }
+
+        // ==================== DATA MANAGEMENT ====================
+        async function loadDataFromFirebase() {
+            try {
+                // Check if we have a "dataCleared" flag in localStorage
+                const dataCleared = localStorage.getItem('dataCleared');
+                if (dataCleared) {
+                    console.log('Data was recently cleared, skipping Firebase load');
+                    localStorage.removeItem('dataCleared'); // Remove the flag
+                    loadDataFromLocalStorage();
+                    return;
+                }
+
+                // Load users
+                const usersSnapshot = await db.collection('users').get();
+                users = [];
+                usersSnapshot.forEach(doc => {
+                    users.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Load spins
+                const spinsSnapshot = await db.collection('spins').get();
+                spins = [];
+                spinsSnapshot.forEach(doc => {
+                    spins.push({ id: doc.id, ...doc.data() });
+                });
+                
+                updateCounts();
+                updateAnalytics();
+                
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+                loadDataFromLocalStorage();
+            }
+        }
 
         function loadDataFromLocalStorage() {
             const savedUsers = localStorage.getItem('wheelUsers');
@@ -1047,6 +1403,7 @@
                 if (firebaseInitialized) {
                     const spinData = {
                         prize: prize.name,
+                        prizeImage: prize.image,
                         userEmail: user ? user.email : 'Guest',
                         userName: user ? user.name : 'Guest',
                         userPhone: user ? user.phone : 'N/A',
@@ -1082,6 +1439,7 @@
             const spin = {
                 id: Date.now().toString(),
                 prize: prize.name,
+                prizeImage: prize.image,
                 userEmail: user ? user.email : 'Guest',
                 userName: user ? user.name : 'Guest',
                 userPhone: user ? user.phone : 'N/A',
@@ -1238,7 +1596,17 @@
 
             setTimeout(async function() {
                 const actualPrize = prizes[selectedPrizeIndex];
-                prizeText.textContent = actualPrize.name;
+                
+                // Display BOTH icon and text in the result panel
+                if (actualPrize.image) {
+                    prizeText.innerHTML = `
+                        <img src="${actualPrize.image}" alt="${actualPrize.name}" class="prize-icon">
+                        ${actualPrize.name}
+                    `;
+                } else {
+                    prizeText.innerHTML = actualPrize.name;
+                }
+                
                 prizeText.parentElement.classList.add('celebrate');
                 
                 await saveSpinToFirebase(actualPrize, currentUser);
@@ -1315,6 +1683,9 @@
             updateAnalytics();
             renderPrizeControls();
             document.getElementById('adminPanel').style.display = 'flex';
+            
+            // Initialize image upload functionality
+            initializeImageUpload();
         }
 
         function hideAdminPanel() {
@@ -1346,40 +1717,42 @@
         }
 
         async function clearAllData() {
-    if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
-        try {
-            // Clear Firebase data if connected
-            if (firebaseInitialized) {
-                // Clear users from Firebase
-                const usersSnapshot = await db.collection('users').get();
-                const userDeletePromises = usersSnapshot.docs.map(doc => doc.ref.delete());
+            if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
+                try {
+                    // Clear Firebase data if connected
+                    if (firebaseInitialized) {
+                        // Clear users from Firebase
+                        const usersSnapshot = await db.collection('users').get();
+                        const userDeletePromises = usersSnapshot.docs.map(doc => doc.ref.delete());
+                        
+                        // Clear spins from Firebase
+                        const spinsSnapshot = await db.collection('spins').get();
+                        const spinDeletePromises = spinsSnapshot.docs.map(doc => doc.ref.delete());
+                        
+                        await Promise.all([...userDeletePromises, ...spinDeletePromises]);
+                        console.log('Firebase data cleared successfully');
+                    }
+                } catch (error) {
+                    console.error('Error clearing Firebase data:', error);
+                }
                 
-                // Clear spins from Firebase
-                const spinsSnapshot = await db.collection('spins').get();
-                const spinDeletePromises = spinsSnapshot.docs.map(doc => doc.ref.delete());
+                // Clear localStorage
+                users = [];
+                spins = [];
+                localStorage.removeItem('wheelUsers');
+                localStorage.removeItem('wheelSpins');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('uploadedImages');
+                uploadedImages = [];
                 
-                await Promise.all([...userDeletePromises, ...spinDeletePromises]);
-                console.log('Firebase data cleared successfully');
+                // Set flag to prevent Firebase from reloading data on next refresh
+                localStorage.setItem('dataCleared', 'true');
+                
+                updateCounts();
+                updateAnalytics();
+                alert('All data has been cleared from both Firebase and local storage.');
             }
-        } catch (error) {
-            console.error('Error clearing Firebase data:', error);
         }
-        
-        // Clear localStorage
-        users = [];
-        spins = [];
-        localStorage.removeItem('wheelUsers');
-        localStorage.removeItem('wheelSpins');
-        localStorage.removeItem('currentUser');
-        
-        // Set flag to prevent Firebase from reloading data on next refresh
-        localStorage.setItem('dataCleared', 'true');
-        
-        updateCounts();
-        updateAnalytics();
-        alert('All data has been cleared from both Firebase and local storage.');
-    }
-}
 
         // ==================== EXPORT FUNCTIONS ====================
         function exportUsersToExcel() {
