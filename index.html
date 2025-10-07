@@ -51,32 +51,19 @@
         
         .registration-form {
             width: 100%;
+            padding: 0 10px; /* Add some padding on mobile */
+            box-sizing: border-box;
         }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        
+
         .form-group input {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #ddd;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px; /* Prevent zoom on iOS */
+            box-sizing: border-box;
         }
-        
-        .form-group input:focus {
-            border-color: #ff7e5f;
-            outline: none;
-        }
-        
+
         .submit-btn {
             background: linear-gradient(to right, #ff7e5f, #feb47b);
             color: white;
@@ -88,6 +75,7 @@
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
+            box-sizing: border-box;
         }
         
         .wheel-container {
@@ -242,8 +230,10 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 20px; /* Add padding for small screens */
+            box-sizing: border-box;
         }
-        
+
         .admin-content {
             background: white;
             padding: 30px;
@@ -252,6 +242,8 @@
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+            margin: 0 auto; /* Center horizontally */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
         
         .admin-tabs {
@@ -259,18 +251,21 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #eee;
             flex-wrap: wrap;
+            overflow-x: auto; /* Allow horizontal scrolling on mobile */
         }
-        
+
         .admin-tab {
-            padding: 12px 24px;
+            padding: 10px 15px; /* Smaller padding on mobile */
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem; /* Smaller font on mobile */
             font-weight: 600;
             color: #666;
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
+            white-space: nowrap; /* Prevent text wrapping */
+            flex-shrink: 0; /* Don't shrink tabs */
         }
         
         .admin-tab.active {
@@ -340,34 +335,182 @@
 
         /* Prize Management Styles */
         .prize-item {
-            display: flex;
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            gap: 12px;
             align-items: center;
             margin-bottom: 15px;
             padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
         }
-        
+
+        .prize-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-1px);
+        }
+
         .prize-color {
             width: 30px;
             height: 30px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #ddd;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
         }
-        
+
+        .preview-small {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #e1e5e9;
+            background: white;
+            padding: 2px;
+        }
+
         .prize-inputs {
-            flex: 1;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr auto;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .prize-name {
+            grid-column: 1;
+        }
+
+        .prize-probability {
+            grid-column: 2;
+        }
+
+        .prize-color-input {
+            grid-column: 3;
+            width: 100%;
+            height: 40px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .prize-image-input-container {
+            grid-column: 4;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
-        
-        .prize-inputs input {
+
+        .prize-image-input {
+            flex: 1;
             padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            background: #fafbfc;
+        }
+
+        .remove-prize {
+            grid-column: 5;
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 40px;
+        }
+
+        .remove-prize:hover {
+            background: #ff3742;
+            transform: scale(1.05);
+        }
+
+        .prize-inputs input {
+            padding: 10px 12px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: #fafbfc;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .prize-inputs input:focus {
+            border-color: #ff7e5f;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 126, 95, 0.1);
+            outline: none;
+        }
+
+        .prize-probability {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .prize-probability::after {
+            content: "%";
+            position: absolute;
+            right: 10px;
+            color: #666;
+        }
+
+        .prize-image-input-container {
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .admin-panel {
+                padding: 15px;
+                align-items: flex-start; /* Start from top on mobile */
+                justify-content: center;
+            }
+            
+            .admin-content {
+                padding: 20px;
+                width: 95%;
+                max-height: 85vh;
+                margin-top: 20px; /* Add some top margin */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-panel {
+                padding: 10px;
+            }
+            
+            .admin-content {
+                padding: 15px;
+                width: 98%;
+                max-height: 80vh;
+            }
+        }
+
+        /* For larger screens, use horizontal layout */
+        @media (min-width: 768px) {
+            .prize-item {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .prize-inputs {
+                flex-direction: row;
+            }
+            
+            .prize-image-input-container {
+                flex-direction: row;
+            }
         }
         
         .prize-name {
@@ -437,21 +580,25 @@
         
         .probability-total {
             text-align: center;
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
             font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-        
+
         .probability-info {
             text-align: center;
-            margin: 10px 0;
-            padding: 10px;
+            margin: 15px 0;
+            padding: 12px;
             background: #e3f2fd;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
             color: #1565c0;
+            border-left: 4px solid #2196f3;
         }
 
         .export-options {
@@ -463,8 +610,21 @@
         .export-section {
             margin-top: 20px;
             padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .export-section h4 {
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .export-section p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
         }
 
         .bottom-admin-panel {
@@ -641,6 +801,99 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 0.8rem;
+        }
+
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .admin-content {
+                padding: 15px;
+                margin: 10px;
+                max-width: 95vw;
+            }
+            
+            .admin-tabs {
+                font-size: 0.8rem;
+            }
+            
+            .admin-tab {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .prize-name {
+                min-width: 100%; /* Full width on mobile */
+            }
+            
+            .export-options {
+                flex-direction: column; /* Stack export buttons */
+            }
+            
+            .admin-actions {
+                flex-direction: column; /* Stack action buttons */
+            }
+            
+            .save-btn, .reset-btn {
+                width: 100%; /* Full width buttons */
+            }
+            
+            /* Make image upload section more compact */
+            .export-section {
+                padding: 15px;
+            }
+            
+            /* Adjust wheel size for mobile */
+            .wheel-container {
+                width: 280px;
+                height: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .prize-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .prize-inputs {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .prize-inputs > * {
+                grid-column: 1 !important;
+            }
+            
+            .prize-image-input-container {
+                grid-template-columns: 1fr auto;
+            }
+            
+            .remove-prize {
+                justify-self: start;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-content {
+                padding: 10px;
+                margin: 5px;
+            }
+            
+            .admin-tab {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+            
+            .wheel-container {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .btn-spin {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
         }
     </style>
 </head>
@@ -1007,30 +1260,29 @@
                 const prizeItem = document.createElement('div');
                 prizeItem.className = 'prize-item';
                 prizeItem.innerHTML = `
-                    <div class="prize-color" style="background-color: ${prize.color}"></div>
-                    <img src="${prize.image || 'https://cdn-icons-png.flaticon.com/512/1178/1178479.png'}" 
-                         class="preview-small" 
-                         alt="Preview" 
-                         style="${prize.image ? '' : 'display: none;'}"
-                         onerror="this.style.display='none'">
+                    <div class="prize-color" style="background-color: ${prize.color}" title="Click color picker to change"></div>
                     <div class="prize-inputs">
                         <input type="text" class="prize-name" value="${prize.name}" placeholder="Prize Name">
                         <input type="number" class="prize-probability" value="${prize.probability}" min="1" max="100" placeholder="%">
                         <input type="color" class="prize-color-input" value="${prize.color}">
                         <div class="prize-image-input-container">
-                            <input type="url" class="prize-image-input" value="${prize.image || ''}" placeholder="Image URL or upload above">
-                            <button type="button" class="export-btn" onclick="selectPrizeForUpload(${index})" style="padding: 8px; background: #17a2b8; white-space: nowrap;">
+                            <input type="url" class="prize-image-input" value="${prize.image || ''}" placeholder="Image URL">
+                            <button type="button" class="export-btn" onclick="selectPrizeForUpload(${index})" style="padding: 8px 12px; background: #17a2b8; white-space: nowrap;">
                                 📷
                             </button>
                         </div>
+                        <button class="remove-prize" onclick="removePrize(${index})" title="Remove Prize">×</button>
                     </div>
-                    <button class="remove-prize" onclick="removePrize(${index})">×</button>
                 `;
                 container.appendChild(prizeItem);
             });
             
-            document.getElementById('probabilityTotal').textContent = `Total Probability: ${totalProbability}%`;
-            document.getElementById('probabilityTotal').style.color = totalProbability === 100 ? 'green' : 'red';
+            // Update probability display with color coding
+            const probabilityElement = document.getElementById('probabilityTotal');
+            probabilityElement.textContent = `Total Probability: ${totalProbability}%`;
+            probabilityElement.style.background = totalProbability === 100 
+                ? 'linear-gradient(135deg, #2ed573 0%, #1dd1a1 100%)'
+                : 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
             
             // Add event listeners
             container.querySelectorAll('.prize-name, .prize-probability, .prize-color-input, .prize-image-input').forEach(input => {
