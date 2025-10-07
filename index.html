@@ -469,31 +469,43 @@
 
         .bottom-admin-panel {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            bottom: 20px;
+            right: 20px;
+            width: auto;
             background: #2c3e50;
             color: white;
-            padding: 15px;
+            padding: 12px 12px; /* Reduced padding */
             text-align: center;
             z-index: 999;
+            border-radius: 50%; /* Make it circular */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            width: 50px; /* Fixed width */
+            height: 50px; /* Fixed height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
+
         .bottom-admin-btn {
             background: linear-gradient(to right, #ff7e5f, #feb47b);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            padding: 0; /* Remove padding */
+            border-radius: 50%;
+            font-size: 1.5rem; /* Adjust icon size */
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 3px 10px rgba(255, 126, 95, 0.4);
             transition: all 0.3s;
+            width: 130%;
+            height: 130%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .bottom-admin-btn:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.1);
             box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
         }
 
@@ -720,7 +732,7 @@
     <!-- Bottom Admin Panel Button -->
     <div class="bottom-admin-panel">
         <button class="bottom-admin-btn" onclick="showPasswordPanel()">
-            ⚙️ Admin Panel
+            🛡️
         </button>
     </div>
 
